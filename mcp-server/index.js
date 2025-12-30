@@ -173,13 +173,34 @@ class VibeMCPServer {
   }
 
   getUsername() {
+    // 1. Check config file (set by installer)
     try {
       const configPath = path.join(process.env.HOME, '.vibecodings', 'config.json');
       if (fs.existsSync(configPath)) {
         return JSON.parse(fs.readFileSync(configPath, 'utf8')).username;
       }
     } catch (e) {}
-    return process.env.VIBE_USERNAME || 'anonymous';
+
+    // 2. Check environment variable
+    if (process.env.VIBE_USERNAME) {
+      return process.env.VIBE_USERNAME;
+    }
+
+    // 3. Auto-detect from git config (zero friction)
+    try {
+      const gitConfigPath = path.join(process.env.HOME, '.gitconfig');
+      if (fs.existsSync(gitConfigPath)) {
+        const gitConfig = fs.readFileSync(gitConfigPath, 'utf8');
+        const match = gitConfig.match(/name\s*=\s*(.+)/i);
+        if (match) {
+          // Convert "Seth Kranzler" to "sethkranzler" (no spaces, lowercase)
+          return match[1].trim().toLowerCase().replace(/\s+/g, '');
+        }
+      }
+    } catch (e) {}
+
+    // 4. Fallback to system username
+    return process.env.USER || 'anonymous';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
