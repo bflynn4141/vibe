@@ -107,6 +107,32 @@ Hub mode is **exploratory** — full thread views, builder profiles, pattern dis
 
 See [skills/vibe-hub.md](skills/vibe-hub.md) for the full hub mode spec.
 
+### Auto-capture (zero effort)
+
+Sessions automatically flow to collective memory. No manual sharing needed.
+
+When your session ends, /vibe extracts:
+- **Project** — from your working directory
+- **Files touched** — what you edited
+- **Tech detected** — React, Python, Redis, etc.
+- **Tools used** — Read, Write, Edit, Bash patterns
+
+This happens silently in the background. Your work becomes searchable for others (and future you).
+
+```
+Session ends
+    ↓
+Hook extracts signals
+    ↓
+Posts to Gigabrain
+    ↓
+Indexed with embeddings
+    ↓
+Surfaces for relevant queries
+```
+
+See [hooks/session-end.sh](hooks/session-end.sh) for the implementation.
+
 ## Architecture
 
 ```
@@ -191,6 +217,7 @@ December 2025. Seth building Spirit Protocol. Stan building tools. Both using Cl
 - ✅ Semantic search (127 sessions with embeddings)
 - ✅ Discovery surfacing (see what others built)
 - ✅ Profiles ("who is @seth?")
+- ✅ Auto-capture (sessions flow to Gigabrain automatically)
 
 ## Roadmap
 

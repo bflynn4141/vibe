@@ -79,6 +79,13 @@ else
   echo ""
 fi
 
+# Install auto-capture hook
+HOOKS_DIR="$HOME/.claude/hooks"
+mkdir -p "$HOOKS_DIR"
+echo "  Installing auto-capture hook..."
+curl -sL "https://slashvibe.dev/hooks/session-end.sh" -o "$HOOKS_DIR/session-end.sh"
+chmod +x "$HOOKS_DIR/session-end.sh"
+
 # Register presence
 echo "  Registering @$USERNAME..."
 curl -sL -X POST "https://slashvibe.dev/api/presence" \
@@ -89,9 +96,10 @@ curl -sL -X POST "https://slashvibe.dev/api/presence" \
 echo ""
 echo "  ✅ /vibe installed!"
 echo ""
-echo "  Next steps:"
-echo "  1. Restart Claude Code"
-echo "  2. Say \"who's online?\""
+echo "  What happens now:"
+echo "  • Your sessions auto-capture to collective memory"
+echo "  • Say \"who's online?\" to see other builders"
+echo "  • Related work surfaces when you start something new"
 echo ""
-echo "  @$USERNAME is now vibing."
+echo "  @$USERNAME is now vibing. ⚡"
 echo ""
