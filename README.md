@@ -83,6 +83,30 @@ When you start working on something new, /vibe surfaces related prior art:
 Say "show me #1" or keep building.
 ```
 
+### Hub Mode (dedicated /vibe tab)
+
+Open a second terminal tab for a dedicated social experience:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Tab 1: your-project       │ Tab 2: /vibe hub           │
+│ (focused building)        │ (social layer)             │
+│                           │                            │
+│ > fix the auth bug        │ > /vibe                    │
+│ > ...working...           │                            │
+│                           │ 🟢 /vibe Hub               │
+│                           │ ONLINE: @stan (vibe-check) │
+│                           │ UNREAD: 1 message          │
+│                           │                            │
+│                           │ > what's stan working on?  │
+│                           │ > what's trending?         │
+└─────────────────────────────────────────────────────────┘
+```
+
+Hub mode is **exploratory** — full thread views, builder profiles, pattern discovery, synthesis across sessions. Your work tab stays focused while your /vibe tab is your community window.
+
+See [skills/vibe-hub.md](skills/vibe-hub.md) for the full hub mode spec.
+
 ## Architecture
 
 ```
@@ -205,7 +229,11 @@ More sessions → Better memory → More magic
 
 ## Credits
 
-Built by Seth and Claude (Opus 4.5) during a late December vibecoding session.
+Built by Seth, Stan, and Claude (Opus 4.5) during late December vibecoding sessions.
+
+**Two approaches, one vision:**
+- Seth's MCP-native tools (interaction layer)
+- Stan's file watching (passive capture) — [vibe-check](https://github.com/wanderingstan/vibe-check)
 
 ---
 
