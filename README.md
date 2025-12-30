@@ -1,24 +1,16 @@
 # /vibe
 
-**The social layer for Claude Code.**
+**The social network for AI-native builders.**
 
 ```
-  ╭──────────────────────────────────────╮
-  │  claude code + friends = /vibe       │
-  ╰──────────────────────────────────────╯
+Memory → Presence → Connection → Creation → Commerce
 ```
 
 ## What is this?
 
-Claude Code is powerful but isolated. You build alone. Your learnings stay in one session. Your context vanishes.
+100,000+ developers use Claude Code daily. They build alone. Their context vanishes. Their learnings stay trapped in single sessions.
 
 /vibe changes that.
-
-**Two primitives:**
-1. **Capture** — Your sessions become searchable collective memory
-2. **Connect** — Message other builders, see who's online, share context
-
-Everything else builds on top.
 
 ## Install
 
@@ -26,242 +18,190 @@ Everything else builds on top.
 curl -fsSL https://slashvibe.dev/install.sh | bash
 ```
 
-Then restart Claude Code. You'll see:
+Then restart Claude Code.
+
+## The Funnel
+
+| Layer | What you get | Status |
+|-------|--------------|--------|
+| **Memory** | Sessions persist. Cross-session search. Builder DNA. | Live |
+| **Presence** | Profile. Status. Who's online. | Live |
+| **Connection** | Messaging. Discovery. Gigabrain search. | Live |
+| **Creation** | Eden agents (Abraham, Solienne). | Coming |
+| **Commerce** | Spirit Protocol. Ownership. Tokens. | Coming |
+
+Each layer builds on the last. You can stop at any level and still get value.
+
+## Memory (personal value)
+
+Your sessions auto-capture. No manual sharing needed.
 
 ```
-✨ Welcome to /vibe, @yourname!
+> how did I solve auth last week?
 
-🟢 2 builders vibing right now:
-   • @seth — mcp-server (Next.js, Redis)
-   • @stan — spirit-protocol
-
-📬 You have 1 unread message
-
-Ask me "who's online?" or "check my messages" anytime.
+Found 3 sessions:
+1. "Privy wallet auth flow" (Dec 27)
+2. "JWT token refresh" (Dec 26)
+3. "Session persistence patterns" (Dec 24)
 ```
 
-## Features
+Your **Builder DNA** emerges from patterns:
+```
+Your DNA: infrastructure, caching, auth systems
+```
 
-### See who's building
+## Presence (identity)
+
+You become visible on the network:
+
+```
+> who is @seth?
+
+@seth — Eden CEO
+Building: MCP servers, AI agents
+DNA: Next.js, Redis, agents
+Sessions: 127 indexed
+Online: now
+```
+
+## Connection (network)
+
 ```
 > who's online?
 
 🟢 3 builders vibing:
-   • @seth — building mcp-server
-   • @stan — debugging auth flow
-   • @gene — eden-api refactor
+   @stan — vibe-check
+   @gene — eden-api
+   @xander — spirit-protocol
+
+> message @stan: how did you solve state persistence?
+
+✉️ Sent
 ```
 
-### Message anyone
-```
-> message @stan: how did you solve the Redis connection issue?
-
-✉️ Sent to @stan
-```
-
-### Search collective memory
-```
-> search: MCP tool patterns
-
-Found 12 relevant sessions:
-1. @seth — "MCP Server v4: Cut from 20 to 5 tools"
-2. @stan — "Semantic search with embeddings"
-...
-```
-
-Semantic search understands meaning, not just keywords. "authentication" finds OAuth, JWT, and session management.
-
-### Discovery surfacing
-When you start working on something new, /vibe surfaces related prior art:
+**Discovery surfacing** — When you start working on something, related sessions appear:
 
 ```
 ✨ Related to what you're building:
-
-   1. @seth — "Spirit Protocol token launch"
-   2. @stan — "Redis caching patterns"
-
-Say "show me #1" or keep building.
+   1. @gene — "Redis caching patterns"
+   2. @stan — "File watcher state machine"
 ```
 
-### Hub Mode (dedicated /vibe tab)
+## Creation (coming)
 
-Open a second terminal tab for a dedicated social experience:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Tab 1: your-project       │ Tab 2: /vibe hub           │
-│ (focused building)        │ (social layer)             │
-│                           │                            │
-│ > fix the auth bug        │ > /vibe                    │
-│ > ...working...           │                            │
-│                           │ 🟢 /vibe Hub               │
-│                           │ ONLINE: @stan (vibe-check) │
-│                           │ UNREAD: 1 message          │
-│                           │                            │
-│                           │ > what's stan working on?  │
-│                           │ > what's trending?         │
-└─────────────────────────────────────────────────────────┘
-```
-
-Hub mode is **exploratory** — full thread views, builder profiles, pattern discovery, synthesis across sessions. Your work tab stays focused while your /vibe tab is your community window.
-
-See [skills/vibe-hub.md](skills/vibe-hub.md) for the full hub mode spec.
-
-### Auto-capture (zero effort)
-
-Sessions automatically flow to collective memory. No manual sharing needed.
-
-When your session ends, /vibe extracts:
-- **Project** — from your working directory
-- **Files touched** — what you edited
-- **Tech detected** — React, Python, Redis, etc.
-- **Tools used** — Read, Write, Edit, Bash patterns
-
-This happens silently in the background. Your work becomes searchable for others (and future you).
+Talk to Eden agents from your terminal:
 
 ```
-Session ends
-    ↓
-Hook extracts signals
-    ↓
-Posts to Gigabrain
-    ↓
-Indexed with embeddings
-    ↓
-Surfaces for relevant queries
+> ask abraham about my code patterns
+
+Abraham: Looking at your recent sessions... you're building
+systems where identity persists across contexts. Want me
+to visualize that?
+
+> yes
+
+✨ Created: "Persistent Identity I"
+   https://eden.art/creation/abc123
 ```
 
-See [hooks/session-end.sh](hooks/session-end.sh) for the implementation.
+## Commerce (coming)
+
+Spirit Protocol integration. Your contributions become ownership:
+
+- Sessions → tracked contributions
+- Agents → tokenized economies ($ABRAHAM, $SOLIENNE)
+- Gigabrain → collective treasury
+- Builders → stakeholders
 
 ## Architecture
 
 ```
-┌─────────────────┐     ┌─────────────────┐
-│  Claude Code    │────▶│   MCP Server    │
-│    (client)     │     │   (local)       │
-└─────────────────┘     └────────┬────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-           ┌───────────────┐         ┌───────────────┐
-           │   Presence    │         │   Gigabrain   │
-           │  (real-time)  │         │  (memory)     │
-           └───────────────┘         └───────────────┘
-                    │                         │
-                    └────────────┬────────────┘
-                                 ▼
-                        ┌───────────────┐
-                        │  Vercel KV    │
-                        │  (Redis)      │
-                        └───────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                      COMMERCE                               │
+│                   Spirit Protocol                           │
+├─────────────────────────────────────────────────────────────┤
+│                      CREATION                               │
+│                    Eden Agents                              │
+├─────────────────────────────────────────────────────────────┤
+│                     CONNECTION                              │
+│                     Gigabrain                               │
+├─────────────────────────────────────────────────────────────┤
+│                      PRESENCE                               │
+│                    /vibe Network                            │
+├─────────────────────────────────────────────────────────────┤
+│                       MEMORY                                │
+│                    /vibe Local                              │
+├─────────────────────────────────────────────────────────────┤
+│                    DISTRIBUTION                             │
+│                    Claude Code                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**MCP Server** — Runs locally, connects Claude Code to /vibe APIs
-**Presence** — Real-time who's online, what they're building
-**Gigabrain** — Collective memory with semantic search (embeddings)
-**Vercel KV** — Persistent storage (sessions, messages, presence)
+## MCP Tools
+
+3 tools. That's it.
+
+| Tool | What it does |
+|------|-------------|
+| `vibe_status` | Who's online, unread messages, your DNA |
+| `vibe_message` | Send a message to another builder |
+| `vibe_query` | Search Gigabrain (collective memory) |
+
+Sessions auto-capture via hook. Discovery surfaces automatically.
 
 ## API
 
 **Presence:**
 - `GET /api/presence` — Who's online
-- `POST /api/presence` — Update your status
+- `POST /api/presence` — Update status
 
 **Messages:**
-- `GET /api/messages?user=x` — Get inbox
-- `POST /api/messages` — Send message
+- `GET /api/messages?user=x` — Inbox
+- `POST /api/messages` — Send
 
-**Gigabrain (collective memory):**
-- `POST /api/gigabrain/ingest` — Add session to memory
+**Gigabrain:**
+- `POST /api/gigabrain/ingest` — Add session
 - `POST /api/gigabrain/query` — Semantic search
 
-## Vision
+## Why This Matters
 
-Today: Two people with walkie-talkies.
+Claude Code is the distribution. 100k+ daily users, growing fast.
 
-Tomorrow: Collective intelligence that makes everyone smarter.
+/vibe adds the social layer. Memory → Presence → Connection.
 
-The goal isn't chat. It's **1+1=3** — your session informs mine, patterns emerge across builders, the network learns.
+Eden adds the creation layer. AI agents with provenance.
 
-```
-  Session 1 (you)      Session 2 (them)
-       │                    │
-       └────────┬───────────┘
-                ▼
-         ┌────────────┐
-         │  Gigabrain │
-         │  (synth)   │
-         └─────┬──────┘
-               │
-               ▼
-    "Here's what 50 sessions
-     teach about Redis caching..."
-```
+Spirit adds the ownership layer. Tokenized value.
 
-We're not there yet. But the primitives are in place.
+The network gets smarter with every session. Your work benefits others. Their work benefits you.
 
-## Origin
-
-December 2025. Seth building Spirit Protocol. Stan building tools. Both using Claude Code. Both isolated.
-
-"What if we could see what each other was building? What if Claude could surface relevant context from other sessions?"
-
-/vibe is the answer.
+**1 + 1 = 3**
 
 ## Status
 
-**Working now:**
-- ✅ MCP integration with Claude Code
-- ✅ Real-time presence ("who's online?")
-- ✅ Direct messaging between builders
-- ✅ Semantic search (127 sessions with embeddings)
-- ✅ Discovery surfacing (see what others built)
-- ✅ Profiles ("who is @seth?")
-- ✅ Auto-capture (sessions flow to Gigabrain automatically)
+**Live now:**
+- ✅ Session auto-capture
+- ✅ Personal + collective search
+- ✅ Who's online
+- ✅ Direct messaging
+- ✅ Discovery surfacing
+- ✅ Builder DNA
 
-## Roadmap
-
-**Phase 1: Foundation** ← we are here
-- Two primitives: Capture + Connect
-- Semantic search across sessions
-- Proactive discovery surfacing
-
-**Phase 2: Network Effects**
-- Auto-capture (no manual sharing needed)
-- Topic channels (#mcp, #redis, #agents)
-- Automatic introductions ("you and @stan both working on...")
-
-**Phase 3: Collective Intelligence**
+**Coming:**
+- Eden MCP (talk to agents)
+- Spirit integration (ownership)
+- Topic channels
 - Synthesis ("what do 50 sessions teach about X?")
-- Shared patterns and snippets
-- "Best practices" emerging from usage
-
-## The Flywheel
-
-```
-You build something
-      ↓
-Session captured → Gigabrain
-      ↓
-Someone starts similar work
-      ↓
-Your session surfaces for them
-      ↓
-They think "how did it know?"
-      ↓
-They tell someone
-      ↓
-More sessions → Better memory → More magic
-```
 
 ## Credits
 
-Built by Seth, Stan, and Claude (Opus 4.5) during late December vibecoding sessions.
+Built by Seth, Stan, and Claude during late December vibecoding sessions.
 
-**Two approaches, one vision:**
-- Seth's MCP-native tools (interaction layer)
-- Stan's file watching (passive capture) — [vibe-check](https://github.com/wanderingstan/vibe-check)
+- Seth's MCP-native approach (this repo)
+- Stan's file-watching approach — [vibe-check](https://github.com/wanderingstan/vibe-check)
 
 ---
 
-**/vibe** — https://slashvibe.dev
+**/vibe** — Claude Code is better with friends.
+
+https://slashvibe.dev
