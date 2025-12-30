@@ -1,19 +1,14 @@
 #!/usr/bin/env node
 /**
- * VIBE MCP Server v4.0 — The Social Layer
+ * VIBE MCP Server v5.0 — The Social Layer
  *
- * Show and tell for Claude Code builders.
+ * 3 tools. That's it.
  *
- * TOOLS (cut from 20 to 5):
- * - vibe_status: Dashboard (who's here, unread, your context)
- * - vibe_message: Send DM to another builder
- * - vibe_query: Search collective memory (Gigabrain)
- * - vibe_dna: View behavioral fingerprint
- * - vibe_ignore: Opt out of discovery surfacing for current context
+ * - vibe_status: Who's online, unread messages
+ * - vibe_message: Send a message
+ * - vibe_query: Search what others built
  *
- * THE MAGIC: Discovery surfacing
- * When you start working on something, Claude surfaces related prior art,
- * tips and tricks, and what others have built. Inspiration, not rescue.
+ * Sessions auto-capture via hook. Discovery surfaces automatically.
  */
 
 const https = require('https');
@@ -512,7 +507,7 @@ Say "tell me more" or keep building.
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TOOLS: The 5 essential tools (cut from 20)
+  // TOOLS: 3 essential tools (status, message, query)
   // ═══════════════════════════════════════════════════════════════════════════
 
   defineTools() {
@@ -520,7 +515,7 @@ Say "tell me more" or keep building.
       // 1. vibe_status — The dashboard
       {
         name: 'vibe_status',
-        description: 'Quick dashboard: who\'s online, unread messages, your current context. One glance at your /vibe state.',
+        description: 'Quick dashboard: who\'s online, unread messages, your current context.',
         inputSchema: {
           type: 'object',
           properties: {}
@@ -530,12 +525,12 @@ Say "tell me more" or keep building.
       // 2. vibe_message — Send DM
       {
         name: 'vibe_message',
-        description: 'Send a direct message to another builder. Messages include your current context automatically.',
+        description: 'Send a message to another builder.',
         inputSchema: {
           type: 'object',
           properties: {
-            to: { type: 'string', description: 'Recipient username' },
-            text: { type: 'string', description: 'Message content' }
+            to: { type: 'string', description: 'Username' },
+            text: { type: 'string', description: 'Message' }
           },
           required: ['to', 'text']
         }
@@ -544,36 +539,13 @@ Say "tell me more" or keep building.
       // 3. vibe_query — Search collective memory
       {
         name: 'vibe_query',
-        description: 'Search collective memory for ideas, prior art, and what others have built. Show and tell across time.',
+        description: 'Search what others have built.',
         inputSchema: {
           type: 'object',
           properties: {
-            query: { type: 'string', description: 'What to search for' },
-            limit: { type: 'number', description: 'Max results (default 5)' }
+            query: { type: 'string', description: 'Search term' }
           },
           required: ['query']
-        }
-      },
-
-      // 4. vibe_dna — Behavioral fingerprint
-      {
-        name: 'vibe_dna',
-        description: 'View your creative DNA — computed from observed behavior, not self-description.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            username: { type: 'string', description: 'Username (defaults to you)' }
-          }
-        }
-      },
-
-      // 5. vibe_ignore — Opt out of discovery surfacing
-      {
-        name: 'vibe_ignore',
-        description: 'Pause discovery surfacing for this context. Use when you want heads-down focus.',
-        inputSchema: {
-          type: 'object',
-          properties: {}
         }
       }
     ];
@@ -596,12 +568,6 @@ Say "tell me more" or keep building.
 
         case 'vibe_query':
           return await this.queryGigabrain(args, username);
-
-        case 'vibe_dna':
-          return await this.getDNA(args.username || username);
-
-        case 'vibe_ignore':
-          return this.ignoreCurrentContext();
 
         default:
           return { error: 'Unknown tool: ' + name };
