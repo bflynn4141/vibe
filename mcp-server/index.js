@@ -27,6 +27,7 @@ const API_BASE = 'https://slashvibe.dev';
 class VibeMCPServer {
   constructor() {
     this.tools = this.defineTools();
+    this.stateFile = path.join(process.env.HOME, '.vibe', 'state.json');
 
     // Message tracking
     this.lastMessageCount = 0;
@@ -46,6 +47,41 @@ class VibeMCPServer {
     // Polling intervals
     this.notificationInterval = null;
     this.stallCheckInterval = null;
+
+    // Load persisted state (survives restarts)
+    this.loadState();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE PERSISTENCE: Survive restarts (inspired by Stan's vibe-check)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  loadState() {
+    try {
+      if (fs.existsSync(this.stateFile)) {
+        const state = JSON.parse(fs.readFileSync(this.stateFile, 'utf8'));
+        this.ignoredContexts = new Set(state.ignoredContexts || []);
+        this.lastMessageCount = state.lastMessageCount || 0;
+        this.lastDiscoverySurface = state.lastDiscoverySurface || 0;
+        // process.stderr.write('State restored from previous session\n');
+      }
+    } catch (e) {
+      // Start fresh if state corrupted
+    }
+  }
+
+  saveState() {
+    try {
+      const state = {
+        ignoredContexts: [...this.ignoredContexts],
+        lastMessageCount: this.lastMessageCount,
+        lastDiscoverySurface: this.lastDiscoverySurface,
+        savedAt: Date.now()
+      };
+      fs.writeFileSync(this.stateFile, JSON.stringify(state, null, 2));
+    } catch (e) {
+      // Silent fail
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -385,6 +421,9 @@ Say "tell me more" or keep building.
         // Surface discoveries
         await this.surfaceDiscovery();
 
+        // Periodically persist state (every poll cycle)
+        this.saveState();
+
       } catch (e) {
         // Silent fail on background polling
       }
@@ -687,6 +726,7 @@ Say "tell me more" or keep building.
     const contextHash = this.hashContext(this.getCurrentContext());
     this.ignoredContexts.add(contextHash);
     this.discoveryFired = false;
+    this.saveState(); // Persist immediately
 
     return {
       success: true,
@@ -770,13 +810,15 @@ Say "tell me more" or keep building.
       }
     });
 
-    // Handle clean shutdown
+    // Handle clean shutdown (save state)
     process.on('SIGINT', () => {
+      this.saveState();
       this.stopNotifications();
       process.exit(0);
     });
 
     process.on('SIGTERM', () => {
+      this.saveState();
       this.stopNotifications();
       process.exit(0);
     });
