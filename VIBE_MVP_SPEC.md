@@ -1,352 +1,325 @@
-# /vibe MVP Spec v2.0
+# /vibe MVP Spec v2.1
 
 **One line:** DMs inside Claude Code.
 
-**The test:** Will a user take one tiny action that creates a real human connection inside their terminal—and want to do it again tomorrow?
+**The bet:** If a new user can get a reply without leaving their terminal, they'll use it again.
 
 ---
 
-## The MMMVP
+## The MMMVP Loop
 
 ```
 1. INSTALL        curl -fsSL slashvibe.dev/install.sh | bash
 2. IDENTIFY       @handle + "building: one-liner"
 3. PING           vibe ping @stan
-4. GET A REPLY    ← this is the only thing that matters
+4. GET A REPLY    ← the only thing that matters
 ```
 
-If you get one reply inside Claude Code in the first 5 minutes, you have something. If you don't, nothing else matters.
+**MVP success criterion:** % of users who receive a reply within 5 minutes of first ping.
+
+If we can't engineer this in seed, we don't have a product yet.
 
 ---
 
-## Success Criteria
+## Three Design Decisions (Locked)
 
-| Metric | Target |
-|--------|--------|
-| Time to first outbound ping | < 120 seconds from install |
-| % users who receive a reply within 24h | 30-40% (seed cohort) |
-| D7 retention (sent ping OR checked inbox) | 25% in seed |
+### 1. What does `vibe ping` send?
 
-**North star:** Replies received per week (not messages sent)
-
----
-
-## The Ping Primitive
-
-A **ping** is a lightweight opener that:
-- Includes your "building:" status
-- Asks a single easy question
-- Gives the recipient a one-keystroke reply path
-
-### Command
+**Decision: Fully templated, warm, one question.**
 
 ```
 > vibe ping @stan
+
+Sending to @stan...
+
+"hey @stan — i'm seth, building mcp server for social.
+ quick q: what's the hardest part of what you're building?
+ reply: vibe reply p7x2 '...'"
+
+✓ Sent
 ```
 
-Or let Claude suggest:
+**Why this template:**
+- Includes sender's `building:` context (so recipient knows who you are)
+- One easy question (not "how are you" — something they can answer in 10 words)
+- Reply command included (zero friction to respond)
+- Warm but not robotic (varies slightly: "hey/hi", "quick q/one q", question rotates)
 
+**Template variations** (server picks randomly):
 ```
-> vibe ping
-
-No one specified. Here are 3 builders you might want to ping:
-
-  1. @stan — building file watcher (online now)
-  2. @gene — building eden-api (2h ago)
-  3. @boreta — building audio agents (yesterday)
-
-Who do you want to ping? (1/2/3 or @handle)
-```
-
-### Auto-generated message
-
-```
-hey @stan — i'm building vibecodings (mcp server for social).
-quick q: what are you working on today?
-
-reply with: vibe reply abc123 "..."
+"hey @{to} — i'm {from}, building {building}. quick q: what's the hardest part of what you're building?"
+"hi @{to} — {from} here, working on {building}. one q: what are you building today?"
+"hey @{to} — i'm {from} ({building}). curious: what's your stack look like?"
 ```
 
-This does two things:
-1. **Removes blank page anxiety** — you don't have to think of what to say
-2. **Makes replies frictionless** — recipient just runs a command
+**Power user escape hatch:**
+```
+> vibe dm @stan "custom message here"
+```
+
+### 2. How does `building:` update?
+
+**Decision: Manual only for MVP. Auto-detect later.**
+
+```
+> vibe set building "auth flow for privy"
+
+✓ Updated. You're now: @seth — building auth flow for privy
+```
+
+**Why manual:**
+- Simpler to ship
+- No detection logic to break
+- User controls their identity
+- Staleness is acceptable for MVP (most people work on one thing for days)
+
+**v1.1 enhancement (not MVP):**
+- Auto-suggest from `cwd` or `package.json` name
+- Prompt: "Looks like you're in `spirit-protocol`. Update your building line? (y/n)"
+
+### 3. What's the invite flow?
+
+**Decision: Install command + pairing ping.**
+
+```
+> vibe invite
+
+Share this with a friend:
+
+────────────────────────────────────────
+curl -fsSL slashvibe.dev/install.sh | bash
+
+After install, ping me:
+vibe ping @seth
+────────────────────────────────────────
+
+(copied to clipboard)
+```
+
+**Why pairing:**
+- Creates immediate first connection
+- New user has someone to ping right away
+- Inviter gets a reply (dopamine for both)
+- This is the viral loop
 
 ---
 
-## MVP Scope (Cut Ruthlessly)
+## Presence Design: Always Suggest Next Action
+
+Presence is not a dashboard. It's a call to action.
+
+```
+> vibe status
+
+⚡ /vibe
+
+Online now
+  🟢 @stan — building file watcher
+  🟢 @gene — building eden-api
+
+Recently active
+  🟡 @boreta — building audio agents (2h ago)
+  🟡 @luke — building farcaster agents (yesterday)
+
+📬 1 unread message
+
+Next: vibe ping @stan
+```
+
+**Rules:**
+- Always end with a suggested command
+- Show online first, then recent (7 days)
+- If inbox has unread, surface it
+- Never just "3 builders vibing" — always actionable
+
+---
+
+## Cold Start: Seeded Directory, Not Bots
+
+**Bots are a trap.** Claude Code users hate fake presence.
+
+**Instead:**
+
+1. **Seed with real responders** — You + 5 people who commit to replying fast during week 1
+2. **Constrain pings to directory** — In private beta, `vibe ping` suggests only seeded users
+3. **Push invite hard when empty** — If no one's around, the UI says: "Invite a friend: `vibe invite`"
+4. **Show "recently active"** — Even if no one's online, there's life
+
+**Responder roster (week 1):**
+- @seth (you)
+- @stan
+- @gene
+- @boreta
+- @phil
+- (2-3 more from personal invites)
+
+These people commit to replying within 1 hour during beta.
+
+---
+
+## MVP Scope (Final)
 
 ### IN MVP ✅
 
-**1. Identity (minimal)**
-- `@handle` (required)
-- `building:` one-liner (required)
-- That's the entire profile
+**Identity:**
+- `@handle` (required at install)
+- `building:` one-liner (required at install)
+- `vibe set building "..."` to update
 
-**2. Presence**
-- Online now (🟢)
-- Recently active (🟡 last 7 days)
-- Status = last heartbeat + project
+**Presence:**
+- 🟢 Online now
+- 🟡 Recently active (7 days)
+- Always suggests next action
 
-**3. Ping + DM**
-- `vibe ping @user` — templated opener
-- `vibe dm @user "text"` — freeform message
+**Messaging:**
+- `vibe ping @user` — templated opener (default)
+- `vibe dm @user "text"` — freeform (power users)
 - `vibe inbox` — check messages
-- `vibe reply <id> "text"` — respond to a ping
+- `vibe reply <id> "text"` — respond
 
-**4. Invite**
-- `vibe invite` — prints copy/paste invite with your handle
-- "install and ping me: `vibe ping @seth`"
+**Viral:**
+- `vibe invite` — install command + pairing ping
 
 ### NOT IN MVP ❌
 
-| Feature | Why not |
-|---------|---------|
-| Semantic search | Not connection, it's discovery (later) |
-| Session auto-capture | Downstream of connection |
+| Cut | Why |
+|-----|-----|
+| Semantic search | Not connection |
+| Session auto-capture | Privacy + complexity |
 | Embeddings / Gigabrain | Phase 2 |
-| DNA / patterns | Nice-to-have |
+| DNA / patterns | Phase 2 |
 | Profiles beyond one-liner | Scope creep |
-| Any "feed" | Not a feed product |
+| Any "feed" | Buddy list > feed |
 | Read receipts | Complexity |
 | Threads / reactions | Complexity |
-| Rich media | Text is enough |
-| OAuth verification | Handle trust is fine for now |
+| OAuth / GitHub verification | Handle trust is fine for seed |
+| Arbitrary cold DMs | Constrain to directory first |
 
 ---
 
-## The Install Flow
+## Commands (Final)
 
-### Step 1: Run installer
-
-```bash
-curl -fsSL slashvibe.dev/install.sh | bash
-```
-
-### Step 2: Collect identity
-
-```
-⚡ /vibe — DMs inside Claude Code
-
-Pick a handle:
-@_
-
-What are you building? (one line)
-building: _
-```
-
-### Step 3: Success
-
-```
-Welcome, @seth!
-building: mcp server for social
-
-✓ Installed
-✓ Configured Claude Code
-
-Restart Claude Code. Then ping someone.
-```
-
-### Step 4: First run (the critical moment)
-
-On restart, Claude shows:
-
-```
-⚡ You're live on /vibe, @seth!
-
-Ping someone to start vibing:
-
-  🟢 @stan — building file watcher (online)
-  🟡 @gene — building eden-api (2h ago)
-  🟡 @boreta — building audio agents (yesterday)
-
-Try: vibe ping @stan
-
-Or: vibe ping (to see more)
-```
-
-**Critical rule:** User should never have to remember commands. Claude suggests the next action every time.
-
----
-
-## Solving the Ghost Town
-
-Presence list shows TWO sections:
-- **Online now** (🟢)
-- **Recently active** (🟡 last 7 days)
-
-Most new users will message someone "recent," not "online." That's fine.
-
-If nobody is online:
-
-```
-> vibe ping
-
-No one online right now.
-
-Here are 5 recently active builders:
-
-  1. @stan — building file watcher (2h ago)
-  2. @gene — building eden-api (yesterday)
-  ...
-
-They'll see your ping next time they open Claude Code.
-Who do you want to ping?
-```
-
----
-
-## Message Context
-
-When @stan receives a ping, he sees:
-
-```
-📬 Ping from @seth
-   building: mcp server for social
-
-   "hey @stan — i'm building vibecodings (mcp server for social).
-    quick q: what are you working on today?"
-
-   Reply: vibe reply abc123 "..."
-```
-
-The sender's context travels with the message. Stan knows who Seth is and what he's building. Makes replies more likely.
-
----
-
-## The Flywheel
-
-```
-Presence creates curiosity    → "who's on?"
-Ping creates contact          → "hey @stan"
-Reply creates dopamine        → "someone responded!"
-Follow-up creates relationship→ ongoing conversation
-Invite creates growth         → "you should try /vibe"
-```
-
-Discovery and search come LATER, after connection works.
-
----
-
-## Commands (Complete List)
-
-| Command | What it does |
-|---------|-------------|
-| `vibe ping @user` | Send templated opener |
+| Command | What |
+|---------|------|
+| `vibe status` | Who's online + recent + unread + next action |
+| `vibe ping @user` | Templated opener (default path) |
 | `vibe ping` | Show suggestions, pick someone |
-| `vibe dm @user "text"` | Send freeform message |
+| `vibe dm @user "text"` | Freeform message (power users) |
 | `vibe inbox` | Check messages |
 | `vibe reply <id> "text"` | Respond to a message |
-| `vibe status` | Show who's online + recent |
-| `vibe invite` | Print shareable invite |
+| `vibe invite` | Generate invite + pairing command |
 | `vibe set building "..."` | Update your one-liner |
 
-That's it. 8 commands. Claude suggests them contextually.
+**8 commands. Claude suggests them contextually.**
 
 ---
 
-## Technical Architecture
+## Success Metrics
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Claude Code    │────▶│   MCP Server    │────▶│   /vibe API     │
-│                 │     │   (local)       │     │   (Vercel)      │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                        │
-                                                        ▼
-                                                ┌─────────────────┐
-                                                │   Vercel KV     │
-                                                └─────────────────┘
-```
+| Metric | Target |
+|--------|--------|
+| Install success rate | > 85% |
+| Time to first ping | < 120 seconds |
+| Reply rate (5 min, seed) | > 50% |
+| Reply rate (24h, general) | 30-40% |
+| D7 retention | 25% |
 
-### Data Stored
-
-**Presence:**
-```json
-{
-  "handle": "seth",
-  "building": "mcp server for social",
-  "status": "active",
-  "lastSeen": 1735500000000
-}
-```
-
-**Messages:**
-```json
-{
-  "id": "abc123",
-  "from": "seth",
-  "to": "stan",
-  "fromBuilding": "mcp server for social",
-  "text": "hey @stan — i'm building...",
-  "type": "ping",
-  "timestamp": 1735500000000,
-  "read": false
-}
-```
-
-Retention: 30 days. No session content. No code. Just handles, one-liners, and messages.
+**North star:** Replies received per week
 
 ---
 
 ## Go-to-Market
 
 ### Phase 1: Seed (Week 1)
-- **Goal:** 30-50 people who know each other
-- **Action:** Seth, Stan, Gene + personal invites
-- **Force the loop:** install → ping → reply
-- **Measure:** replies + D7 retention
+- **Size:** 30-50 people who know each other
+- **Roster:** Seth, Stan, Gene + personal invites
+- **Guarantee:** Responder roster commits to 1-hour reply time
+- **Focus:** Force the ping → reply loop
+- **Measure:** Reply rate within 5 minutes
 
 ### Phase 2: Friends (Weeks 2-3)
-- **Goal:** 100 installs, 50% send a ping
-- **Action:** Claude Code Discord, Twitter
-- **Watch:** reply rate, ghost town problem
+- **Size:** 100 installs
+- **Source:** Claude Code Discord, Twitter, friend-of-friend
+- **Focus:** Reply rate without responder guarantee
+- **Measure:** Organic reply rate, ghost town frequency
 
 ### Phase 3: Launch (Week 4)
-- **Goal:** 500 installs
+- **Size:** 500 installs
+- **Source:** Hacker News, Product Hunt
 - **Hook:** "DMs inside your AI coding session"
-- **Channels:** Hacker News, Product Hunt
+- **Measure:** Viral coefficient (invites per user)
 
 ---
 
-## The Site (What to Fix)
+## The Behavioral Question
 
-Above the fold:
-- **Headline:** "DMs inside Claude Code."
-- **Subhead:** "See who's building. Ping them. Stay in flow."
-- **Install command** in copy box
-- **Terminal GIF** (10-15s): install → ping → reply appears
+Beyond the strategic question for advisors:
 
-Below:
-- **How it works:** MCP server, Vercel API, what data is sent
-- **The 2-minute path:** install → set profile → ping
-- **Seeded network:** "Private beta. Start with your friends."
+> "Do you believe 'DMs + presence inside Claude Code' is a big enough wedge?"
 
-Do NOT say "social network" or "100K users" publicly. Say:
-- "Claude Code is becoming where builders spend their day. /vibe keeps connection inside that context."
+Ask the behavioral question:
+
+> "If you were deep in Claude Code and got a ping from a stranger working on something similar, would you reply?"
+
+If advisors say "yes, obviously" — you have signal.
+If they hesitate — probe why.
+
+---
+
+## Historical Framing
+
+**What we're stealing:**
+- **AIM:** Buddy list is the product. `building:` is the away message.
+- **ICQ:** Lightweight ping as handshake.
+- **Early Facebook:** Gating solves trust and cold start. Expand one cluster at a time.
+- **WhatsApp:** Reliability beats features. Messages must arrive.
+- **GitHub:** Social emerges from shared work artifacts (later, not MVP).
+
+**What we're avoiding:**
+- **MySpace:** Profile bloat and customization chaos.
+- **Slack/Discord:** Rooms before 1:1 replies work.
+- **Twitter:** Feed-first, connection-second.
+
+**North-star sentence:**
+
+> "/vibe is an IM handshake inside Claude Code; everything else is downstream."
+
+---
+
+## Phase 2 Boundary (What Comes After MVP)
+
+Only after replies work:
+
+1. **Discovery** — Search what others are building (Gigabrain)
+2. **Context sharing** — Opt-in session snippets attached to messages
+3. **GitHub/Discord verification** — Trusted identity layer
+4. **Rooms** — Topic channels (only after 1:1 is solid)
+5. **DNA** — Patterns emerge from what you build
+
+**The lesson from history:** IM products win on reliable replies between people who trust each other. Social networks win later on identity + distribution + discovery. If you mix them too early, you get ghost-town + spam + complexity.
 
 ---
 
 ## Advisor Questions
 
-**The central question:**
+**Strategic:**
+1. Is "DMs inside Claude Code" a sufficient wedge? If not, what wedge is?
+2. Will you personally install this to talk to 5 people you already know?
+3. What would stop you from using it weekly? (privacy, spam, noise, unclear value)
+4. Where does it spread first: friend groups, Discords, open-source projects, hackathon cohorts?
 
-> "Do you believe 'DMs + presence inside Claude Code' is a big enough wedge to grow into a network—starting from small cohorts?"
-
-**Specific asks:**
-
-1. Is the install flow believable? Any friction points?
-2. Who are the first 50 users to personally invite?
-3. What's the HN title that lands?
-4. Is `@handle` + `building:` enough identity, or do we need GitHub OAuth?
-5. What's the privacy promise we can actually guarantee?
+**Behavioral:**
+5. If you got a ping from a stranger working on something similar, would you reply?
 
 ---
 
 ## One Thing Next
 
-Implement `vibe ping` + required `building:` line and make the welcome screen aggressively push the ping.
+Ship `vibe ping` with the locked template + `vibe invite` with pairing.
 
-That's the MMMVP that creates a real moment.
+Then seed 30 people and guarantee replies.
+
+That's the MMMVP.
 
 ---
 
