@@ -7,7 +7,7 @@
 const https = require('https');
 const http = require('http');
 
-const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+const API_URL = process.env.VIBE_API_URL || 'https://vibe-public-topaz.vercel.app';
 
 function request(method, path, data = null) {
   return new Promise((resolve, reject) => {
