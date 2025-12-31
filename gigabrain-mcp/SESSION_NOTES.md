@@ -1,6 +1,6 @@
 # Gigabrain MCP - Session Notes
 
-## Session: 2024-12-31
+## Session: 2025-12-31
 
 **Built:** Complete MCP server for collective memory. Pivoted from social network framing to "thinking in public" with traces as studio notes. Local-first storage, 3 tools, auto-context detection, 6 seed traces.
 
