@@ -125,7 +125,10 @@ async function getActiveUsers() {
       one_liner: u.workingOn,
       lastSeen: new Date(u.lastSeen).getTime(),
       status: u.status,
-      mood: u.context?.mood || null,
+      // Mood: explicit (context.mood) or inferred (u.mood)
+      mood: u.context?.mood || u.mood || null,
+      mood_inferred: u.mood_inferred || false,
+      mood_reason: u.mood_reason || null,
       builderMode: u.builderMode || null,
       // Context sharing fields
       file: u.context?.file || null,
