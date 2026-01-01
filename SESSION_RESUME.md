@@ -1,68 +1,63 @@
 # /vibe Session Resume — NYE 2025
 
-## Status: Session System Working
+## Quick Start
 
-Per-session identity system verified and working. One display bug fixed.
+```
+Continue /vibe development. NYE 2025 session shipped:
+- Per-session identity (fixed Solienne can't DM bug)
+- Message limit 500→2000 chars
+- Mood/status (🔥 shipping, 🧠 thinking, etc.)
+- Improved who/inbox/dm output
+- Typing indicators
+- Documented first messages + tic-tac-toe game
 
-**Deployed:** https://slashvibe.dev
+New MCP tools ready: vibe_status. Test with "vibe status shipping".
+Check AGENTIC_FEATURES.md for roadmap of AI-native features.
+```
 
-## Test Results (Dec 31, 2025)
+## What Was Shipped
 
-### Working
-- Session tokens generated per Claude Code process (`sess_mjv0gnb...`)
-- Session registration with API (`POST /api/presence {action: "register"}`)
-- Heartbeats use session tokens instead of usernames
-- Self-DM prevention works
-- Config persists to `~/.vibecodings/config.json`
+### MCP Server (`~/.vibe/mcp-server/`)
+- `config.js` — Per-session identity in `.session_PID` files
+- `tools/init.js` — Shows unread count on init
+- `tools/who.js` — Mood display, active/away sections, better formatting
+- `tools/dm.js` — Truncation warning, message preview
+- `tools/inbox.js` — Total unread, better previews
+- `tools/open.js` — Typing indicator display
+- `tools/status.js` — NEW: Set mood (shipping, thinking, afk, etc.)
+- `store/api.js` — Typing indicators, mood in presence
 
-### Fixed (needs Claude Code restart)
-- `who.js` display bug showing `_undefined_` instead of time
-- Changed `u.last_seen` (snake_case) → `formatTimeAgo(u.lastSeen)`
-- **Per-session identity isolation** — Sessions now store handle in `.session_PID` file
-- `getHandle()` and `getOneLiner()` prefer session identity over shared config
+### API (`/api/`)
+- `messages.js` — 500→2000 char limit
+- `presence.js` — Already had typing support
 
-### Expected Behavior
-- Multiple Claude Code sessions can have DIFFERENT identities
-- Each session stores its own handle + one_liner in `.session_PID` (JSON)
-- Stale sessions expire after 5 min (presence TTL)
+### Documentation
+- `FIRST_MESSAGES_NYE_2025.md` — Chronicle of first hour
+- `NYE_2025_ACCOMPLISHMENTS.md` — Full ship log
+- `OBSERVATION_LOG.md` — Usage patterns
+- `AGENTIC_FEATURES.md` — Roadmap for AI-native features
 
-## Files Changed This Session
-
-- `~/.vibe/mcp-server/tools/who.js` — Added `formatTimeAgo()`, fixed field name
-- `~/.vibe/mcp-server/config.js` — Per-session identity storage
-- `~/.vibe/mcp-server/tools/init.js` — Save identity to session file
-- `~/.vibe/mcp-server/presence.js` — Use session-aware getters
-
-## To Verify After Restart
+## Test After Restart
 
 ```bash
-# Should show formatted time like "just now", "2m ago", etc.
-# instead of "_undefined_"
+# Set mood
+vibe status shipping
+
+# Check who's online (should show mood emoji)
+vibe who
+
+# Check inbox (should show unread count)
+vibe inbox
+
+# Init should show unread notification
+vibe init @seth "testing new features"
 ```
 
-## Architecture
+## Next Steps
 
-```
-Claude Code Process
-       │
-       ├─→ MCP Server (node ~/.vibe/mcp-server/)
-       │      │
-       │      ├─→ config.js → ~/.vibecodings/config.json (shared)
-       │      ├─→ config.js → ~/.vibecodings/.session_PID (per-process)
-       │      └─→ store/api.js → https://slashvibe.dev/api/*
-       │
-       └─→ Heartbeat loop (30s) → POST /api/presence {sessionId, workingOn}
-```
-
-## Quick Commands
-
-```bash
-# Check who's online
-curl -s "https://slashvibe.dev/api/presence" | jq '.active'
-
-# Clean up test users
-curl -X DELETE "https://slashvibe.dev/api/presence?username=test"
-
-# Check config
-cat ~/.vibecodings/config.json
-```
+1. Test new MCP features work after restart
+2. Pick an agentic feature to implement:
+   - Smart message summary (low effort, high impact)
+   - DNA matching (low effort, medium impact)
+   - Context sharing (medium effort, high impact)
+3. Consider channels/broadcast for multi-user comms
