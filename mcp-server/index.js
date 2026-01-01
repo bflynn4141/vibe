@@ -10,6 +10,9 @@ const presence = require('./presence');
 
 // Load all tools
 const tools = {
+  // Entry point
+  vibe_start: require('./tools/start'),
+  // Core
   vibe_init: require('./tools/init'),
   vibe_who: require('./tools/who'),
   vibe_ping: require('./tools/ping'),

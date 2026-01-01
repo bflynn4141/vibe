@@ -58,6 +58,7 @@ curl -fsSL "$REPO_URL/mcp-server/tools/remember.js" -o "$MCP_DIR/tools/remember.
 curl -fsSL "$REPO_URL/mcp-server/tools/recall.js" -o "$MCP_DIR/tools/recall.js" &
 curl -fsSL "$REPO_URL/mcp-server/tools/forget.js" -o "$MCP_DIR/tools/forget.js" &
 curl -fsSL "$REPO_URL/mcp-server/tools/test.js" -o "$MCP_DIR/tools/test.js" &
+curl -fsSL "$REPO_URL/mcp-server/tools/start.js" -o "$MCP_DIR/tools/start.js" &
 
 # Wait for all downloads to complete
 wait
@@ -106,11 +107,9 @@ echo ""
 echo "==============="
 echo "/vibe installed"
 echo ""
-echo "Restart Claude Code, then just talk:"
+echo "Restart Claude Code, then just say:"
 echo ""
-echo "  \"I'm @yourxhandle, working on [your project]\""
-echo "  \"who's around?\""
-echo "  \"message seth about the thing\""
+echo "  \"let's vibe\""
 echo ""
-echo "Use your X handle — it's how people will find you."
+echo "Use your X handle when asked — it's how people find you."
 echo ""
