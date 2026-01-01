@@ -319,7 +319,14 @@ export default async function handler(req, res) {
         success: true,
         presence: presenceData,
         message: "Presence updated",
-        storage: KV_CONFIGURED ? 'kv' : 'memory'
+        storage: KV_CONFIGURED ? 'kv' : 'memory',
+        _debug: {
+          hasContext: !!context,
+          hasSessionContext: !!sessionContext,
+          hasError: !!sessionContext?.error,
+          inferredMood,
+          inferredReason
+        }
       });
     } catch (error) {
       return res.status(500).json({
