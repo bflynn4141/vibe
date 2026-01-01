@@ -133,45 +133,45 @@
 <body>
     <div class="container">
         <h1>/vibe</h1>
-        <p class="tagline">The social network for Claude Code.</p>
-        <p class="sub">Invite friends. Build together. Your sessions make everyone smarter.</p>
+        <p class="tagline">Communication layer for Claude Code.</p>
+        <p class="sub">DM people without leaving your terminal. See who's building. Stay in flow.</p>
 
         <div class="install">
-            <code>curl -fsSL slashvibe.dev/install.sh | bash</code>
+            <code>curl -fsSL raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash</code>
             <button class="copy" onclick="copy()">Copy</button>
         </div>
         <p class="note">Then restart Claude Code.</p>
 
         <div class="terminal">
-            <div><span class="prompt">⚡</span> <span class="bright">Welcome to /vibe, @you</span></div>
-            <div class="dim" style="margin-bottom: 12px;">Your network: 3 friends online</div>
-            <div class="dim">  🟢 @stan — building file watcher</div>
-            <div class="dim">  🟢 @gene — building eden-api</div>
-            <div class="dim" style="margin-bottom: 12px;">  🟡 @boreta — building audio agents (2h ago)</div>
-            <div><span class="prompt">></span> vibe ping @stan</div>
-            <div class="dim" style="margin-bottom: 12px;">✓ Sent</div>
-            <div><span class="prompt">></span> vibe invite</div>
-            <div class="dim">📋 Invite copied. Send to a friend.</div>
+            <div><span class="prompt">></span> vibe init</div>
+            <div class="dim" style="margin-bottom: 12px;">✓ You're now @seth — "building /vibe"</div>
+            <div><span class="prompt">></span> vibe who</div>
+            <div class="dim">  🟢 @stan — building file watcher (2m ago)</div>
+            <div class="dim" style="margin-bottom: 12px;">  🟢 @gene — eden-api refactor (just now)</div>
+            <div><span class="prompt">></span> vibe dm @stan hey, want to sync on that file watcher?</div>
+            <div class="dim" style="margin-bottom: 12px;">✓ Sent to @stan</div>
+            <div><span class="prompt">></span> vibe inbox</div>
+            <div class="dim">📬 @gene (2 unread) · @stan (1 unread)</div>
         </div>
 
         <div class="features">
             <div class="feature">
-                <div class="feature-title">Chat while you build</div>
-                <div class="feature-desc">Ping friends without leaving your terminal. See who's online. Stay in flow.</div>
+                <div class="feature-title">vibe who</div>
+                <div class="feature-desc">See who's building right now. Their handle + what they're working on.</div>
             </div>
             <div class="feature">
-                <div class="feature-title">Collective intelligence</div>
-                <div class="feature-desc">Your sessions help your friends. Their sessions help you. The network gets smarter.</div>
+                <div class="feature-title">vibe dm</div>
+                <div class="feature-desc">Message anyone without leaving Claude Code. No context switch. No Discord tab.</div>
             </div>
             <div class="feature">
-                <div class="feature-title">Invite-only</div>
-                <div class="feature-desc">Start with people you trust. No strangers. No spam. Just builders you know.</div>
+                <div class="feature-title">vibe inbox</div>
+                <div class="feature-desc">Check your messages. Reply inline. Stay in the terminal where you work.</div>
             </div>
         </div>
 
         <div class="beta">
-            <strong>Closed beta.</strong> We're starting with a small network of builders who know each other.
-            Install, invite your friends, and help us build the social layer for Claude Code.
+            <strong>Phase 1 Alpha.</strong> Testing one thing: do you DM people inside Claude Code instead of switching to Discord?
+            Install, message a friend, tell us what works.
         </div>
 
         <div class="stats">
@@ -194,7 +194,7 @@
 
     <script>
         function copy() {
-            navigator.clipboard.writeText('curl -fsSL slashvibe.dev/install.sh | bash');
+            navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash');
             const btn = document.querySelector('.copy');
             btn.textContent = 'Copied!';
             setTimeout(() => btn.textContent = 'Copy', 2000);

@@ -38,13 +38,22 @@ export default async function handler(req, res) {
     let messages = 47; // Default fallback
 
     if (kv) {
-      // Count users
-      const userKeys = await kv.keys('user:*');
-      users = userKeys.length || users;
+      // Count active users (last 5 minutes)
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      try {
+        const activeHandles = await kv.zrangebyscore('presence:active', fiveMinAgo, '+inf');
+        users = activeHandles?.length || users;
+      } catch (e) {
+        // Keep default
+      }
 
-      // Count messages
-      const allMessages = await kv.get('vibe:messages');
-      messages = Array.isArray(allMessages) ? allMessages.length : messages;
+      // Count threads (rough message estimate)
+      try {
+        const threadKeys = await kv.keys('thread:*');
+        messages = (threadKeys?.length || 0) * 3 || messages;
+      } catch (e) {
+        // Keep default
+      }
     }
 
     return res.status(200).json({
