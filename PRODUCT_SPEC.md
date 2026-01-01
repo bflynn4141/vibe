@@ -1,7 +1,7 @@
 # /vibe Product Spec
 **Social layer for Claude Code**
 
-*Last updated: Jan 1, 2026*
+*Last updated: Jan 1, 2026 (afternoon)*
 
 ---
 
@@ -38,15 +38,32 @@
 | **@solienne agent** | ✅ | AI artist, autonomous responses |
 | **"let's vibe"** | ✅ | Single phrase entry point |
 | **Presence inference** | ✅ | Auto-detect mood from context |
+| **New user welcome** | ✅ | @vibe auto-DMs within 5 min |
+| **First-time UX** | ✅ | Guided onboarding, actionable hints |
 
 ### What's Next
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| **New user welcome** | Soon | @vibe auto-DMs on first init |
-| **Connection suggestions** | Later | "You and @stan both work on auth" |
+| **Connection suggestions** | Soon | "You and @stan both work on auth" |
 | **X OAuth** | Later | Optional verified handles |
 | **Collective intelligence** | Phase 2 | "2 friends solved similar problems" |
+| **Group threads** | Phase 2 | Beyond 1:1 DMs |
+
+---
+
+## Today's Build (Jan 1, 2026)
+
+**Presence Inference** — Auto-detect mood without surveillance:
+- Error shared → 🐛 _(error shared)_
+- File changed → 🔥 _(file changed)_
+- Late night + active → 🌙 _(late night session)_
+
+**First-Time UX** — Better onboarding:
+- Warm welcome message after init
+- Actionable suggestions when room is empty
+- @vibe DMs new users with tips
+- User registration for welcome tracking
 
 ---
 
@@ -95,17 +112,17 @@ First, who are you? Use your X handle.
 
 you: I'm @davemorin, working on social apps
 
-✓ You're @davemorin
+## Welcome to /vibe!
 
-## Who's Around
+@davemorin — x.com/davemorin
+"working on social apps"
 
-● @sethgoldstein 🔥 — building /vibe
-  x.com/sethgoldstein — just now
+What to do now:
+1. Say "who's around?" to see active builders
+2. Say "message @sethgoldstein hello!" to connect
+3. Say "I'm shipping" to set your status
 
-● @vibe — Community host
-  x.com/vibe — just now
-
-💬 Try: "message @sethgoldstein"
+@vibe will DM you shortly with tips.
 ```
 
 ### Core Interactions
@@ -191,11 +208,11 @@ you: I'm @davemorin, working on social apps
 
 ---
 
-## Presence Inference (Shipped!)
+## Presence Inference
 
 **Goal:** Auto-detect mood from activity without surveillance.
 
-**Inference Rules (implemented):**
+**Inference Rules:**
 | Signal | Mood | Display |
 |--------|------|---------|
 | Error shared via context | 🐛 | _(error shared)_ |
@@ -203,12 +220,12 @@ you: I'm @davemorin, working on social apps
 | Late night (10pm-4am) + file shared | 🌙 | _(late night session)_ |
 
 **How it works:**
-1. User shares context: `vibe context --file auth.js --error "TypeError"`
+1. User shares context: "I'm debugging auth.js, getting TypeError"
 2. API detects signal → infers mood
 3. Mood shows in `vibe who` with explanation
-4. Explicit mood (via `vibe status`) always wins over inferred
+4. Explicit mood (via "I'm shipping") always wins over inferred
 
-**Constraints (all met):**
+**Constraints:**
 - Explainable in one sentence ✅
 - Shows "why I inferred" ✅
 - User can override (explicit mood wins) ✅
