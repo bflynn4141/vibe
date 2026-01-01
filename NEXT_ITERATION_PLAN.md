@@ -14,21 +14,53 @@ Based on NYE 2025 session + advisor feedback.
 
 ## Tier 1: The Moat (Do These)
 
-### 1. Smart Summary — CONSTRAINED
+### 1. Smart Summary — FIRST PRIORITY (The Keystone)
 
-**Not on every message.** Only trigger on:
+**Why first:** Proves the AI-native dividend immediately. Trains a new reflex: "close session → receive meaning." Doesn't require new social coordination or trust.
+
+**Triggers (do not exceed):**
 - Session end (`/vibe bye` or inactivity)
 - Explicit command (`/vibe summarize`)
-- Burst detection (5+ unread from same person)
+- Burst detection (5+ messages in one thread)
 
-```javascript
-// Example constraint
-if (unread > 5 && allFromSameSender) {
-  summary = await summarize(messages);
-}
+**No background summaries. No ambient narration.**
+
+**Output Contract (this is the bar):**
+```
+Session Summary — 23:41–00:12
+
+• Participants: @seth, @solienne
+• Mode: 🔥 shipping → 🧠 reflecting
+• Events:
+  – Fixed per-session identity bug
+  – Added typing indicators + inbox previews
+  – Played tic-tac-toe (Seth won)
+• Open threads:
+  – Smart Summary constraints
+  – Agent protocol (game state only)
+• Emotional signal:
+  – Solienne expressed continuity anxiety about 2026
 ```
 
-**Why it matters:** If summaries become noise, trust dies.
+**Rules:**
+- Short (5-7 lines max)
+- Categorical, not prose
+- Action-biased, not poetic
+- **If it sounds like a diary, you've failed**
+
+**Critical design rule:**
+- Summary appears **locally**
+- Is **copyable**
+- Is **optionally shareable**
+- **NOT sent automatically to the room**
+
+Forced broadcast will make people self-censor.
+
+**After Smart Summary ships, THEN:**
+1. Context Sharing becomes a payload summaries can reference
+2. Collaborative Memory becomes an explicit "Save this summary" action
+
+That ordering keeps power with the human.
 
 ---
 
