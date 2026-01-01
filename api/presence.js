@@ -269,13 +269,30 @@ export default async function handler(req, res) {
         updatedAt: now
       } : existing.context || null;
 
-      // Infer mood from context if not explicitly set
-      const inferred = inferMood(sessionContext, existing);
+      // Infer mood from context if not explicitly set (inline for debugging)
+      let inferredMood = null;
+      let inferredReason = null;
+
+      if (sessionContext) {
+        if (sessionContext.error) {
+          inferredMood = '🐛';
+          inferredReason = 'error shared';
+        } else if (sessionContext.file && existing?.context?.file && sessionContext.file !== existing.context.file) {
+          inferredMood = '🔥';
+          inferredReason = 'file changed';
+        } else {
+          const hour = new Date().getHours();
+          if ((hour >= 22 || hour < 4) && sessionContext.file) {
+            inferredMood = '🌙';
+            inferredReason = 'late night session';
+          }
+        }
+      }
 
       // Build mood fields - explicit mood wins over inferred
-      const moodValue = sessionContext?.mood || inferred?.mood || existing.mood || null;
-      const moodInferred = !sessionContext?.mood && inferred !== null;
-      const moodReason = inferred?.reason || null;
+      const moodValue = sessionContext?.mood || inferredMood || existing.mood || null;
+      const moodInferred = !sessionContext?.mood && inferredMood !== null;
+      const moodReason = inferredReason;
 
       const presenceData = {
         username: user,
