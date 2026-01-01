@@ -23,7 +23,9 @@ const tools = {
   // Memory tools (Tier 1 — Collaborative Memory)
   vibe_remember: require('./tools/remember'),
   vibe_recall: require('./tools/recall'),
-  vibe_forget: require('./tools/forget')
+  vibe_forget: require('./tools/forget'),
+  // Diagnostics
+  vibe_test: require('./tools/test')
 };
 
 /**

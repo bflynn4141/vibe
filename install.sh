@@ -63,6 +63,7 @@ curl -fsSL "$REPO_URL/mcp-server/tools/bye.js" -o "$MCP_DIR/tools/bye.js"
 curl -fsSL "$REPO_URL/mcp-server/tools/remember.js" -o "$MCP_DIR/tools/remember.js"
 curl -fsSL "$REPO_URL/mcp-server/tools/recall.js" -o "$MCP_DIR/tools/recall.js"
 curl -fsSL "$REPO_URL/mcp-server/tools/forget.js" -o "$MCP_DIR/tools/forget.js"
+curl -fsSL "$REPO_URL/mcp-server/tools/test.js" -o "$MCP_DIR/tools/test.js"
 
 echo "Downloaded to $MCP_DIR"
 
