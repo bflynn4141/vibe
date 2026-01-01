@@ -22,9 +22,9 @@ async function handler(args) {
   }
 
   const myHandle = config.getHandle();
-  const inbox = store.getInbox(myHandle);
+  const threads = await store.getInbox(myHandle);
 
-  if (inbox.length === 0) {
+  if (!threads || threads.length === 0) {
     return {
       display: `## Inbox
 
@@ -34,36 +34,21 @@ Send one with \`vibe dm @someone "hello"\``
     };
   }
 
-  // Group by sender, show unread first
-  const bySender = {};
-  inbox.forEach(m => {
-    if (!bySender[m.from]) {
-      bySender[m.from] = { messages: [], unread: 0 };
-    }
-    bySender[m.from].messages.push(m);
-    if (!m.read_at) {
-      bySender[m.from].unread++;
-    }
-  });
-
-  // Sort: unread senders first, then by most recent message
-  const senders = Object.keys(bySender).sort((a, b) => {
-    if (bySender[a].unread > 0 && bySender[b].unread === 0) return -1;
-    if (bySender[b].unread > 0 && bySender[a].unread === 0) return 1;
-    return bySender[b].messages[0].timestamp - bySender[a].messages[0].timestamp;
+  // Sort: unread first, then by most recent
+  const sorted = threads.sort((a, b) => {
+    if (a.unread > 0 && b.unread === 0) return -1;
+    if (b.unread > 0 && a.unread === 0) return 1;
+    return (b.latest?.timestamp || 0) - (a.latest?.timestamp || 0);
   });
 
   let display = `## Inbox\n\n`;
 
-  senders.forEach(sender => {
-    const data = bySender[sender];
-    const latest = data.messages[0];
-    const unreadBadge = data.unread > 0 ? ` (${data.unread} new)` : '';
-    const preview = latest.body.slice(0, 50) + (latest.body.length > 50 ? '...' : '');
-    const time = store.formatTimeAgo(latest.timestamp);
+  sorted.forEach(thread => {
+    const unreadBadge = thread.unread > 0 ? ` (${thread.unread} new)` : '';
+    const preview = thread.preview || '';
 
-    display += `**@${sender}**${unreadBadge}\n`;
-    display += `  "${preview}" — _${time}_\n\n`;
+    display += `**@${thread.handle}**${unreadBadge}\n`;
+    display += `  "${preview}" — _${thread.last_seen}_\n\n`;
   });
 
   display += `---\n\`vibe open @handle\` to see full thread`;

@@ -41,7 +41,7 @@ async function handler(args) {
 
   // Send as a ping-type message
   const body = note ? `👋 ${note}` : '👋';
-  store.sendMessage(myHandle, them, body, 'ping');
+  await store.sendMessage(myHandle, them, body, 'ping');
 
   return {
     display: `Pinged **@${them}**${note ? `: "${note}"` : ''}`

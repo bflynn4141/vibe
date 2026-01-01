@@ -44,7 +44,7 @@ async function handler(args) {
   config.save(cfg);
 
   // Register presence
-  store.heartbeat(h, one_liner);
+  await store.heartbeat(h, one_liner);
 
   return {
     display: `## Identity Set

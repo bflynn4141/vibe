@@ -21,7 +21,7 @@ async function handler(args) {
     };
   }
 
-  const users = store.getActiveUsers();
+  const users = await store.getActiveUsers();
   const myHandle = config.getHandle();
 
   if (users.length === 0) {

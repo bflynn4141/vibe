@@ -36,8 +36,8 @@ async function handler(args) {
   }
 
   // Get thread and mark as read
-  const thread = store.getThread(myHandle, them);
-  store.markThreadRead(myHandle, them);
+  const thread = await store.getThread(myHandle, them);
+  await store.markThreadRead(myHandle, them);
 
   if (thread.length === 0) {
     return {

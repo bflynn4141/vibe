@@ -43,7 +43,7 @@ async function handler(args) {
     return { display: 'Message cannot be empty.' };
   }
 
-  store.sendMessage(myHandle, them, message.trim(), 'dm');
+  await store.sendMessage(myHandle, them, message.trim(), 'dm');
 
   return {
     display: `Sent to **@${them}**: "${message.trim()}"`
