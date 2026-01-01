@@ -55,9 +55,14 @@ vibe init @seth "testing new features"
 
 ## Next Steps
 
-1. Test new MCP features work after restart
-2. Pick an agentic feature to implement:
-   - Smart message summary (low effort, high impact)
-   - DNA matching (low effort, medium impact)
-   - Context sharing (medium effort, high impact)
-3. Consider channels/broadcast for multi-user comms
+See **NEXT_ITERATION_PLAN.md** for prioritized roadmap based on advisor feedback.
+
+**Tier 1 (The Moat):**
+1. Smart Summary — CONSTRAINED (only on session end, explicit, or burst)
+2. Context Sharing — READ-ONLY, EPHEMERAL, EXPLICIT
+3. Agent Protocol — ONE SCHEMA (game state first)
+4. Collaborative Memory — OPT-IN, PER-THREAD, APPEND-ONLY
+
+**Key insight:** "The moment /vibe feels like a 'toolbox,' you've lost. It should feel like a room that remembers."
+
+**Do NOT:** Add channels, skill invocation, or auto-sharing. Not yet.
