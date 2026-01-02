@@ -4,66 +4,8 @@
 
 const config = require('../config');
 const store = require('../store');
-
-/**
- * Render a payload into display text
- */
-function renderPayload(payload) {
-  if (!payload) return null;
-
-  const type = payload.type || 'data';
-
-  // Game state (tic-tac-toe)
-  if (type === 'game' && payload.game === 'tictactoe') {
-    const board = payload.state?.board || Array(9).fill('');
-    const turn = payload.state?.turn || '?';
-    const winner = payload.state?.winner;
-
-    // Render 3x3 board
-    const cell = (i) => board[i] || '·';
-    let grid = '```\n';
-    grid += ` ${cell(0)} │ ${cell(1)} │ ${cell(2)} \n`;
-    grid += `───┼───┼───\n`;
-    grid += ` ${cell(3)} │ ${cell(4)} │ ${cell(5)} \n`;
-    grid += `───┼───┼───\n`;
-    grid += ` ${cell(6)} │ ${cell(7)} │ ${cell(8)} \n`;
-    grid += '```';
-
-    if (winner) {
-      grid += `\n🏆 **${winner} wins!**`;
-    } else if (board.every(c => c)) {
-      grid += `\n🤝 **Draw!**`;
-    } else {
-      grid += `\n_${turn}'s turn_`;
-    }
-
-    return grid;
-  }
-
-  // Code review request
-  if (type === 'review') {
-    let display = '📝 **Code Review Request**\n';
-    if (payload.files) {
-      display += `Files: ${payload.files.join(', ')}\n`;
-    }
-    if (payload.description) {
-      display += `"${payload.description}"`;
-    }
-    return display;
-  }
-
-  // Handoff
-  if (type === 'handoff') {
-    let display = '🤝 **Handoff**\n';
-    if (payload.context) {
-      display += payload.context;
-    }
-    return display;
-  }
-
-  // Generic payload - show type
-  return `📦 _${type} payload_`;
-}
+const { formatPayload } = require('../protocol');
+const { requireInit, normalizeHandle } = require('./_shared');
 
 const definition = {
   name: 'vibe_open',
@@ -81,15 +23,12 @@ const definition = {
 };
 
 async function handler(args) {
-  if (!config.isInitialized()) {
-    return {
-      display: 'Run `vibe init` first to set your identity.'
-    };
-  }
+  const initCheck = requireInit();
+  if (initCheck) return initCheck;
 
   const { handle } = args;
   const myHandle = config.getHandle();
-  const them = handle.toLowerCase().replace('@', '');
+  const them = normalizeHandle(handle);
 
   if (them === myHandle) {
     return { display: 'You can\'t open a thread with yourself.' };
@@ -132,12 +71,9 @@ Start with \`vibe dm @${them} "hello"\``
       display += `${m.body}\n`;
     }
 
-    // Render payload if present
+    // Render payload if present (using protocol formatter)
     if (m.payload) {
-      const rendered = renderPayload(m.payload);
-      if (rendered) {
-        display += `${rendered}\n`;
-      }
+      display += `${formatPayload(m.payload)}\n`;
     }
 
     display += '\n';

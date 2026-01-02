@@ -5,6 +5,7 @@
 const config = require('../config');
 const store = require('../store');
 const { trackMessage, checkBurst } = require('./summarize');
+const { requireInit, normalizeHandle, truncate, warning } = require('./_shared');
 
 const definition = {
   name: 'vibe_dm',
@@ -30,15 +31,12 @@ const definition = {
 };
 
 async function handler(args) {
-  if (!config.isInitialized()) {
-    return {
-      display: 'Run `vibe init` first to set your identity.'
-    };
-  }
+  const initCheck = requireInit();
+  if (initCheck) return initCheck;
 
   const { handle, message, payload } = args;
   const myHandle = config.getHandle();
-  const them = handle.toLowerCase().replace('@', '');
+  const them = normalizeHandle(handle);
 
   if (them === myHandle) {
     return { display: 'You can\'t DM yourself.' };
@@ -64,12 +62,12 @@ async function handler(args) {
 
   let display = `Sent to **@${them}**`;
   if (wasTruncated) {
-    display += ` ⚠️ (truncated to ${MAX_LENGTH} chars)`;
+    display += ` ${warning(`truncated to ${MAX_LENGTH} chars`)}`;
   }
 
   // Show message preview or payload type
   if (finalMessage) {
-    display += `\n\n"${finalMessage.substring(0, 100)}${finalMessage.length > 100 ? '...' : ''}"`;
+    display += `\n\n"${truncate(finalMessage, 100)}"`;
   }
   if (payload) {
     const payloadType = payload.type || 'data';

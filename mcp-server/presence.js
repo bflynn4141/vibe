@@ -63,4 +63,26 @@ function sendHeartbeat() {
   }
 }
 
-module.exports = { start, stop };
+// Force an immediate heartbeat (for doctor auto-fix)
+async function forceHeartbeat() {
+  if (!config.isInitialized()) {
+    throw new Error('Not initialized');
+  }
+
+  const handle = config.getHandle();
+  const sessionId = config.getSessionId();
+
+  // Re-register session if needed
+  if (!sessionInitialized) {
+    const result = await store.registerSession(sessionId, handle);
+    sessionInitialized = result.success;
+  }
+
+  // Send heartbeat
+  const one_liner = config.getOneLiner();
+  await store.heartbeat(handle, one_liner || '');
+
+  return { success: true, handle };
+}
+
+module.exports = { start, stop, forceHeartbeat };

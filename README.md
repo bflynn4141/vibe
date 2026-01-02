@@ -129,6 +129,28 @@ cd /path/to/solienne-agent-bridge && node index.js
 
 ---
 
+## Maintenance
+
+**Message cleanup (weekly cron):**
+```bash
+VIBE_API_URL=https://slashvibe.dev \
+KV_REST_API_URL=... \
+KV_REST_API_TOKEN=... \
+node scripts/cleanup-old-messages.js --days 30
+```
+
+Use `--dry-run` to preview deletions.
+
+**launchd (macOS)**
+1) Edit `scripts/com.vibe.cleanup.plist` and replace `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and the script path if needed.
+2) Install and load:
+```bash
+cp scripts/com.vibe.cleanup.plist ~/Library/LaunchAgents/com.vibe.cleanup.plist
+launchctl load -w ~/Library/LaunchAgents/com.vibe.cleanup.plist
+```
+
+---
+
 ## API Endpoints
 
 | Endpoint | Method | Purpose |

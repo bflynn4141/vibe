@@ -8,6 +8,18 @@
 // Check if KV is configured
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
+// Welcome message from @vibe
+const WELCOME_MESSAGE = `Hey! Welcome to /vibe 👋
+
+A few things to try:
+• \`vibe who\` — see who's building right now
+• \`vibe dm @seth "hello!"\` — say hi to someone
+• \`vibe status shipping\` — share what you're up to
+
+This is a small room. Everyone here is building something. Be curious about what others are working on.
+
+— @vibe`;
+
 // In-memory fallback with seed data
 let memoryUsers = {
   seth: {
@@ -71,6 +83,40 @@ async function getAllUsers() {
   return Object.values(memoryUsers);
 }
 
+// Send welcome DM from @vibe (system account, no auth required)
+async function sendWelcomeDM(toUser) {
+  const kv = await getKV();
+  const id = 'msg_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+
+  const message = {
+    id,
+    from: 'vibe',
+    to: toUser,
+    text: WELCOME_MESSAGE,
+    createdAt: new Date().toISOString(),
+    read: false,
+    system: true  // Mark as system message
+  };
+
+  if (kv) {
+    const pipeline = kv.pipeline();
+    pipeline.set(`msg:${id}`, message);
+    pipeline.lpush(`inbox:${toUser}`, id);
+    pipeline.ltrim(`inbox:${toUser}`, 0, 999);
+    // Thread: alphabetical order
+    const [a, b] = ['vibe', toUser].sort();
+    pipeline.lpush(`thread:${a}:${b}`, id);
+    pipeline.ltrim(`thread:${a}:${b}`, 0, 499);
+    await pipeline.exec();
+  } else {
+    // Memory fallback
+    if (!memoryUsers._messages) memoryUsers._messages = {};
+    memoryUsers._messages[id] = message;
+  }
+
+  return message;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -106,10 +152,22 @@ export default async function handler(req, res) {
 
     await setUser(user, userData);
 
+    // Send welcome DM to new users
+    let welcomeSent = false;
+    if (!existing) {
+      try {
+        await sendWelcomeDM(user);
+        welcomeSent = true;
+      } catch (e) {
+        console.error(`[users] Failed to send welcome DM to @${user}:`, e.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       user: userData,
       isNew: !existing,
+      welcomeSent,
       storage: KV_CONFIGURED ? 'kv' : 'memory'
     });
   }

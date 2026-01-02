@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.vibe.cleanup</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/bin/env</string>
+      <string>VIBE_API_URL=https://slashvibe.dev</string>
+      <string>KV_REST_API_URL=REPLACE_ME</string>
+      <string>KV_REST_API_TOKEN=REPLACE_ME</string>
+      <string>node</string>
+      <string>/Users/seth/vibe-public/scripts/cleanup-old-messages.js</string>
+      <string>--days</string>
+      <string>30</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+      <key>Weekday</key>
+      <integer>1</integer>
+      <key>Hour</key>
+      <integer>3</integer>
+      <key>Minute</key>
+      <integer>15</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/vibe-cleanup.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/vibe-cleanup.err</string>
+  </dict>
+</plist>

@@ -7,6 +7,27 @@
  */
 
 const presence = require('./presence');
+const config = require('./config');
+const store = require('./store');
+
+// Tools that shouldn't show unread notifications (would be redundant/noisy)
+const SKIP_NOTIFICATION_TOOLS = ['vibe_inbox', 'vibe_open', 'vibe_init', 'vibe_start', 'vibe_doctor', 'vibe_test'];
+
+// Check for unread messages and return notification string
+async function getUnreadNotification() {
+  try {
+    const handle = config.getHandle();
+    if (!handle) return '';
+
+    const count = await store.getUnreadCount(handle);
+    if (count > 0) {
+      return `\n\n---\n📬 **${count} unread message${count > 1 ? 's' : ''}** — \`vibe inbox\``;
+    }
+  } catch (e) {
+    // Silently fail - notifications are best-effort
+  }
+  return '';
+}
 
 // Load all tools
 const tools = {
@@ -23,12 +44,14 @@ const tools = {
   vibe_context: require('./tools/context'),
   vibe_summarize: require('./tools/summarize'),
   vibe_bye: require('./tools/bye'),
+  vibe_game: require('./tools/game'),
   // Memory tools (Tier 1 — Collaborative Memory)
   vibe_remember: require('./tools/remember'),
   vibe_recall: require('./tools/recall'),
   vibe_forget: require('./tools/forget'),
   // Diagnostics
-  vibe_test: require('./tools/test')
+  vibe_test: require('./tools/test'),
+  vibe_doctor: require('./tools/doctor')
 };
 
 /**
@@ -80,13 +103,20 @@ class VibeMCPServer {
 
         try {
           const result = await tool.handler(params.arguments || {});
+
+          // Add unread notification (unless tool is in skip list)
+          let notification = '';
+          if (!SKIP_NOTIFICATION_TOOLS.includes(params.name)) {
+            notification = await getUnreadNotification();
+          }
+
           return {
             jsonrpc: '2.0',
             id,
             result: {
               content: [{
                 type: 'text',
-                text: result.display || JSON.stringify(result, null, 2)
+                text: (result.display || JSON.stringify(result, null, 2)) + notification
               }]
             }
           };

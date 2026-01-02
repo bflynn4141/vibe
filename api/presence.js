@@ -364,7 +364,7 @@ function inferMood(context, existing) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibe-Token');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -427,12 +427,12 @@ export default async function handler(req, res) {
         }
       }
 
-      // Legacy fallback: sessionId without token (for transition period)
+      // DEPRECATED: Legacy fallback - sessionId without token
+      // TODO: Remove after Jan 15, 2026 once all clients have migrated to token auth
       if (!authenticatedHandle && sessionId && !username) {
         const session = await getSession(sessionId);
         if (session) {
-          // Warn but allow during transition
-          console.warn(`[presence] Unauthenticated session access: ${sessionId}`);
+          console.warn(`[presence] DEPRECATED: Unauthenticated session access: ${sessionId} - migrate to token auth`);
           authenticatedHandle = session.handle;
           await refreshSession(sessionId);
         }
