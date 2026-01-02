@@ -195,11 +195,20 @@ async function migratePresence() {
   if (!kv) return { success: false, error: 'KV not configured' };
 
   try {
+    // Check if index exists with wrong type, delete it
+    try {
+      const indexType = await kv.type(PRESENCE_INDEX);
+      if (indexType && indexType !== 'zset' && indexType !== 'none') {
+        await kv.del(PRESENCE_INDEX);
+      }
+    } catch (e) {
+      // Ignore type check errors
+    }
+
     // Find old-style keys
     const oldKeys = await kv.keys('presence:*');
     const keysToMigrate = oldKeys.filter(k =>
       !k.startsWith('presence:data:') &&
-      !k.startsWith('presence:index') &&
       k !== PRESENCE_INDEX
     );
 
@@ -208,21 +217,27 @@ async function migratePresence() {
     }
 
     let migrated = 0;
+    let errors = [];
+
     for (const oldKey of keysToMigrate) {
-      const username = oldKey.replace('presence:', '');
-      const data = await kv.get(oldKey);
+      try {
+        const username = oldKey.replace('presence:', '');
+        const data = await kv.get(oldKey);
 
-      if (data && data.username) {
-        // Migrate to new schema
-        const timestamp = data.lastSeen ? new Date(data.lastSeen).getTime() : Date.now();
+        if (data && data.username) {
+          // Migrate to new schema
+          const timestamp = data.lastSeen ? new Date(data.lastSeen).getTime() : Date.now();
 
-        const pipeline = kv.pipeline();
-        pipeline.set(`presence:data:${username}`, data, { ex: PRESENCE_TTL });
-        pipeline.zadd(PRESENCE_INDEX, { score: timestamp, member: username });
-        pipeline.del(oldKey);
-        await pipeline.exec();
+          const pipeline = kv.pipeline();
+          pipeline.set(`presence:data:${username}`, data, { ex: PRESENCE_TTL });
+          pipeline.zadd(PRESENCE_INDEX, { score: timestamp, member: username });
+          pipeline.del(oldKey);
+          await pipeline.exec();
 
-        migrated++;
+          migrated++;
+        }
+      } catch (e) {
+        errors.push({ key: oldKey, error: e.message });
       }
     }
 
@@ -230,6 +245,7 @@ async function migratePresence() {
       success: true,
       migrated,
       total: keysToMigrate.length,
+      errors: errors.length > 0 ? errors : undefined,
       message: `Migrated ${migrated}/${keysToMigrate.length} presence records`
     };
   } catch (e) {
