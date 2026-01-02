@@ -13,7 +13,41 @@
  * - Token format: sessionId.signature (from /api/presence register)
  */
 
-import { extractToken, verifyToken } from './lib/auth.js';
+import crypto from 'crypto';
+
+// ============ INLINE AUTH (avoid import issues) ============
+const AUTH_SECRET = process.env.VIBE_AUTH_SECRET || 'dev-secret-change-in-production';
+
+function verifyToken(token, expectedHandle) {
+  if (!token) return { valid: false, error: 'No token provided' };
+  const parts = token.split('.');
+  if (parts.length !== 2) return { valid: false, error: 'Invalid token format' };
+  const [sessionId, providedSignature] = parts;
+  const handle = expectedHandle.toLowerCase().replace('@', '');
+  const payload = `${sessionId}:${handle}`;
+  const expectedSignature = crypto
+    .createHmac('sha256', AUTH_SECRET)
+    .update(payload)
+    .digest('base64url');
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(providedSignature), Buffer.from(expectedSignature))) {
+      return { valid: false, error: 'Invalid signature' };
+    }
+  } catch (e) {
+    return { valid: false, error: 'Invalid signature' };
+  }
+  return { valid: true, sessionId };
+}
+
+function extractToken(req) {
+  const authHeader = req.headers?.authorization || req.headers?.Authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7);
+  const vibeToken = req.headers?.['x-vibe-token'] || req.headers?.['X-Vibe-Token'];
+  if (vibeToken) return vibeToken;
+  if (req.query?.token) return req.query.token;
+  return null;
+}
+// ============ END AUTH ============
 
 // Check if KV is configured via environment variables
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);

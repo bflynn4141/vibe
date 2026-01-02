@@ -12,7 +12,54 @@
  * - Write operations require valid token in Authorization header
  */
 
-import { generateToken, generateSessionId, requireAuth, extractToken, verifyToken } from './lib/auth.js';
+import crypto from 'crypto';
+
+// ============ INLINE AUTH (avoid import issues) ============
+const AUTH_SECRET = process.env.VIBE_AUTH_SECRET || 'dev-secret-change-in-production';
+
+function generateToken(sessionId, handle) {
+  const payload = `${sessionId}:${handle.toLowerCase()}`;
+  const signature = crypto
+    .createHmac('sha256', AUTH_SECRET)
+    .update(payload)
+    .digest('base64url');
+  return `${sessionId}.${signature}`;
+}
+
+function verifyToken(token, expectedHandle) {
+  if (!token) return { valid: false, error: 'No token provided' };
+  const parts = token.split('.');
+  if (parts.length !== 2) return { valid: false, error: 'Invalid token format' };
+  const [sessionId, providedSignature] = parts;
+  const handle = expectedHandle.toLowerCase().replace('@', '');
+  const payload = `${sessionId}:${handle}`;
+  const expectedSignature = crypto
+    .createHmac('sha256', AUTH_SECRET)
+    .update(payload)
+    .digest('base64url');
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(providedSignature), Buffer.from(expectedSignature))) {
+      return { valid: false, error: 'Invalid signature' };
+    }
+  } catch (e) {
+    return { valid: false, error: 'Invalid signature' };
+  }
+  return { valid: true, sessionId };
+}
+
+function extractToken(req) {
+  const authHeader = req.headers?.authorization || req.headers?.Authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7);
+  const vibeToken = req.headers?.['x-vibe-token'] || req.headers?.['X-Vibe-Token'];
+  if (vibeToken) return vibeToken;
+  if (req.query?.token) return req.query.token;
+  return null;
+}
+
+function generateServerSessionId() {
+  return `sess_${crypto.randomBytes(12).toString('base64url')}`;
+}
+// ============ END AUTH ============
 
 // Check if KV is configured via environment variables
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -102,10 +149,6 @@ async function refreshSession(sessionId) {
     return session;
   }
   return memorySessions[sessionId] || null;
-}
-
-function generateSessionId() {
-  return 'sess_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
 }
 
 function timeAgo(dateStr) {
@@ -210,7 +253,7 @@ export default async function handler(req, res) {
         const handle = username.toLowerCase().replace('@', '');
 
         // Generate server-side session ID (ignore client-provided one)
-        const serverSessionId = generateSessionId();
+        const serverSessionId = generateServerSessionId();
 
         // Create signed token
         const token = generateToken(serverSessionId, handle);
