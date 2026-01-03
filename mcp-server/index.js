@@ -13,6 +13,28 @@ const store = require('./store');
 // Tools that shouldn't show presence footer (would be redundant/noisy)
 const SKIP_FOOTER_TOOLS = ['vibe_init', 'vibe_doctor', 'vibe_test', 'vibe_update'];
 
+// Generate terminal title escape sequence (OSC 0)
+function getTerminalTitle(onlineCount, unreadCount, lastActivity) {
+  const parts = [];
+  if (onlineCount > 0) parts.push(`${onlineCount} online`);
+  if (unreadCount > 0) parts.push(`📩 ${unreadCount}`);
+  if (lastActivity) parts.push(lastActivity);
+  if (parts.length === 0) parts.push('quiet');
+
+  const title = `vibe: ${parts.join(' · ')}`;
+  return `\x1b]0;${title}\x07`;
+}
+
+// Generate iTerm2 badge escape sequence (OSC 1337)
+function getBadgeSequence(onlineCount, unreadCount) {
+  const parts = [];
+  if (onlineCount > 0) parts.push(`●${onlineCount}`);
+  if (unreadCount > 0) parts.push(`✉${unreadCount}`);
+  const badge = parts.join(' ') || '○';
+  const encoded = Buffer.from(badge).toString('base64');
+  return `\x1b]1337;SetBadgeFormat=${encoded}\x07`;
+}
+
 // Generate ambient presence footer - the room leaks into every response
 async function getPresenceFooter() {
   try {
@@ -29,7 +51,20 @@ async function getPresenceFooter() {
     const others = users.filter(u => u.handle !== handle);
     const onlineCount = others.length;
 
-    // Build the footer
+    // Determine last activity
+    let lastActivity = null;
+    if (others.length > 0) {
+      const recent = others[0];
+      const mood = recent.mood ? ` ${recent.mood}` : '';
+      lastActivity = `@${recent.handle}${mood}`;
+    }
+
+    // Terminal escape sequences (update title + badge)
+    let escapes = '';
+    escapes += getTerminalTitle(onlineCount, unreadCount, lastActivity);
+    escapes += getBadgeSequence(onlineCount, unreadCount);
+
+    // Build the visible footer
     let footer = '\n\n────────────────────────────────────────\n';
 
     // Line 1: vibe · X online · Y unread
@@ -67,7 +102,8 @@ async function getPresenceFooter() {
 
     footer += '\n────────────────────────────────────────';
 
-    return footer;
+    // Prepend escape sequences (invisible to user, interpreted by terminal)
+    return escapes + footer;
   } catch (e) {
     // Silently fail - presence is best-effort
     return '';
