@@ -49,7 +49,7 @@ After install, you can use natural language:
 ## More Info
 
 - Website: https://slashvibe.dev
-- GitHub: https://github.com/brightseth/vibe-public
+- GitHub: https://github.com/brightseth/vibe
 `;
 
 const JSON_RESPONSE = {
@@ -79,7 +79,7 @@ const JSON_RESPONSE = {
   ],
   links: {
     website: "https://slashvibe.dev",
-    github: "https://github.com/brightseth/vibe-public"
+    github: "https://github.com/brightseth/vibe"
   }
 };
 
