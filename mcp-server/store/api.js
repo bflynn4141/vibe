@@ -202,6 +202,7 @@ async function getActiveUsers() {
       handle: u.username,
       one_liner: u.workingOn,
       lastSeen: new Date(u.lastSeen).getTime(),
+      firstSeen: u.firstSeen ? new Date(u.firstSeen).getTime() : null,
       status: u.status,
       // Mood: explicit (context.mood) or inferred (u.mood)
       mood: u.context?.mood || u.mood || null,

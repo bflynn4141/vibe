@@ -1,5 +1,10 @@
 /**
- * vibe who — See who's around
+ * vibe who — See who's around with activity feed
+ *
+ * Shows not just who's online, but what's happening:
+ * - Activity heat (how engaged they are)
+ * - Recent actions ("just joined", "sent you a DM")
+ * - Context (file, branch, what they're stuck on)
  */
 
 const config = require('../config');
@@ -14,6 +19,84 @@ const definition = {
     properties: {}
   }
 };
+
+// Activity heat based on session signals
+function getHeat(user) {
+  const lastSeenMs = user.lastSeen;
+  const now = Date.now();
+  const minutesAgo = (now - lastSeenMs) / 60000;
+
+  // Just joined (within 5 min of session start)
+  if (user.firstSeen) {
+    const sessionDuration = (lastSeenMs - new Date(user.firstSeen).getTime()) / 60000;
+    if (sessionDuration < 5 && minutesAgo < 2) {
+      return { icon: '✨', label: 'just joined' };
+    }
+  }
+
+  // Explicit mood takes priority
+  if (user.mood === '🔥' || user.mood === '🚀') {
+    return { icon: '🔥', label: 'shipping' };
+  }
+  if (user.mood === '🐛') {
+    return { icon: '🐛', label: 'debugging' };
+  }
+  if (user.mood === '🌙') {
+    return { icon: '🌙', label: 'late night' };
+  }
+  if (user.mood === '🧠') {
+    return { icon: '🧠', label: 'deep work' };
+  }
+
+  // Infer from builderMode
+  if (user.builderMode === 'deep-focus') {
+    return { icon: '🧠', label: 'deep focus' };
+  }
+  if (user.builderMode === 'shipping') {
+    return { icon: '🔥', label: 'shipping' };
+  }
+
+  // Default based on recency
+  if (minutesAgo < 2) {
+    return { icon: '⚡', label: 'active' };
+  }
+  if (minutesAgo < 10) {
+    return { icon: '●', label: null };
+  }
+  return { icon: '○', label: 'idle' };
+}
+
+// Format user's current activity
+function formatActivity(user) {
+  const parts = [];
+
+  // File/branch context
+  if (user.file) {
+    parts.push(user.file);
+  }
+  if (user.branch && user.branch !== 'main' && user.branch !== 'master') {
+    parts.push(`(${user.branch})`);
+  }
+
+  // Error they're stuck on
+  if (user.error) {
+    const shortError = user.error.slice(0, 50) + (user.error.length > 50 ? '...' : '');
+    return `⚠️ _stuck on: ${shortError}_`;
+  }
+
+  // Note about what they're doing
+  if (user.note) {
+    return `_"${user.note}"_`;
+  }
+
+  // File context
+  if (parts.length > 0) {
+    return parts.join(' ');
+  }
+
+  // Fall back to one_liner
+  return user.one_liner || 'Building something';
+}
 
 async function handler(args) {
   const initCheck = requireInit();
@@ -38,58 +121,53 @@ _More people are joining soon._`
     };
   }
 
-  // Separate active from away
-  const active = users.filter(u => u.status === 'active');
-  const away = users.filter(u => u.status !== 'active');
+  // Sort by activity: most recent first
+  const sorted = [...users].sort((a, b) => b.lastSeen - a.lastSeen);
 
-  let display = `## Who's Around (${active.length} active)\n\n`;
+  // Separate active from away/offline
+  const active = sorted.filter(u => u.status === 'active');
+  const away = sorted.filter(u => u.status !== 'active');
 
-  active.forEach(u => {
-    const isMe = u.handle === myHandle;
-    const tag = isMe ? ' (you)' : '';
-    const mood = u.mood ? ` ${u.mood}` : '';
-    const moodReason = u.mood_inferred && u.mood_reason ? ` _(${u.mood_reason})_` : '';
-    const xLink = `[x.com/${u.handle}](https://x.com/${u.handle})`;
+  let display = `## Who's Around\n\n`;
 
-    display += `● **@${u.handle}**${tag}${mood}${moodReason} — ${xLink}\n`;
-
-    // Show context if shared (file, branch, note)
-    const hasContext = u.file || u.branch || u.note || u.error;
-    if (hasContext) {
-      // Build context line: file • branch
-      const parts = [];
-      if (u.file) parts.push(u.file);
-      if (u.branch) parts.push(u.branch);
-      if (parts.length > 0) {
-        display += `  ${parts.join(' • ')}\n`;
-      }
-      // Show note or error if present
-      if (u.note) {
-        display += `  _"${u.note}"_\n`;
-      } else if (u.error) {
-        display += `  ⚠️ _${u.error.slice(0, 60)}${u.error.length > 60 ? '...' : ''}_\n`;
-      }
-    } else {
-      // Fall back to one_liner
-      const oneLiner = u.one_liner || 'Building something';
-      display += `  ${oneLiner}\n`;
-    }
-
-    display += `  _${formatTimeAgo(u.lastSeen)}_\n\n`;
-  });
-
-  if (away.length > 0) {
-    display += `### Away (${away.length})\n\n`;
-    away.forEach(u => {
+  // Activity section for active users
+  if (active.length > 0) {
+    active.forEach(u => {
       const isMe = u.handle === myHandle;
-      const tag = isMe ? ' (you)' : '';
-      const xLink = `[x.com/${u.handle}](https://x.com/${u.handle})`;
-      display += `○ **@${u.handle}**${tag} — ${xLink} — _${formatTimeAgo(u.lastSeen)}_\n`;
+      const tag = isMe ? ' _(you)_' : '';
+      const heat = getHeat(u);
+      const heatLabel = heat.label ? ` ${heat.label}` : '';
+      const activity = formatActivity(u);
+      const timeAgo = formatTimeAgo(u.lastSeen);
+
+      display += `${heat.icon} **@${u.handle}**${tag}${heatLabel}\n`;
+      display += `   ${activity}\n`;
+      display += `   _${timeAgo}_\n\n`;
     });
-    display += '\n';
   }
 
-  display += `---\nSay "message @handle" to reach someone`;
+  // Away section (collapsed)
+  if (away.length > 0) {
+    display += `---\n`;
+    display += `**Away** (${away.length}): `;
+    display += away.map(u => {
+      const isMe = u.handle === myHandle;
+      return `@${u.handle}${isMe ? ' (you)' : ''}`;
+    }).join(', ');
+    display += '\n\n';
+  }
+
+  // Quick actions
+  display += `---\n`;
+  display += `Say "message @handle" to reach someone`;
+
+  // Check for unread to add urgency
+  try {
+    const unread = await store.getUnreadCount(myHandle);
+    if (unread > 0) {
+      display += ` · **${unread} unread**`;
+    }
+  } catch (e) {}
 
   return { display };
 }
