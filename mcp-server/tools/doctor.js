@@ -14,6 +14,8 @@ const store = require('../store');
 const presence = require('../presence');
 
 const VIBE_API = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+const VIBE_DIR = path.join(process.env.HOME, '.vibe');
+const MCP_DIR = path.join(VIBE_DIR, 'mcp-server');
 
 const definition = {
   name: 'vibe_doctor',
@@ -367,11 +369,51 @@ async function diagnoseMessages() {
   }
 }
 
+// Diagnose install info (version, path, update capability)
+async function diagnoseInstall() {
+  try {
+    let version = 'unknown';
+    let canUpdate = false;
+
+    // Check for version.json
+    const versionFile = path.join(MCP_DIR, 'version.json');
+    if (fs.existsSync(versionFile)) {
+      try {
+        const versionData = JSON.parse(fs.readFileSync(versionFile, 'utf-8'));
+        version = versionData.version || 'unknown';
+      } catch (e) {}
+    }
+
+    // Check if it's a git repo (can update via git pull)
+    const gitDir = path.join(MCP_DIR, '.git');
+    if (fs.existsSync(gitDir)) {
+      canUpdate = true;
+    }
+
+    const updateMethod = canUpdate ? 'git pull' : 're-run installer';
+
+    return {
+      status: 'info',
+      message: `v${version} · ${MCP_DIR}`,
+      remediation: [
+        `Update: ${updateMethod}`,
+        'After update: restart Claude Code'
+      ]
+    };
+  } catch (e) {
+    return {
+      status: 'warning',
+      message: `Install check failed: ${e.message}`
+    };
+  }
+}
+
 async function handler(args) {
   const autoFix = args.fix === true;
   const results = {};
 
-  // Run diagnostics
+  // Run diagnostics (install info first)
+  results.install = await diagnoseInstall();
   results.api = await diagnoseAPI();
   results.identity = await diagnoseIdentity(autoFix);
   results.presence = await diagnosePresence();

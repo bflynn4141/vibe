@@ -1,12 +1,13 @@
 #!/bin/bash
 # /vibe installer for Claude Code
-# Tier 1: identity, presence, DM, status, context, memory
+# Uses git clone for easy updates
 
 set -e
 
 VIBE_DIR="$HOME/.vibe"
+REPO_DIR="$VIBE_DIR/vibe-repo"
 MCP_DIR="$VIBE_DIR/mcp-server"
-REPO_URL="https://raw.githubusercontent.com/brightseth/vibe/main"
+REPO_URL="https://github.com/brightseth/vibe.git"
 
 echo ""
 echo "/vibe installer"
@@ -28,47 +29,49 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 
 echo "Node $(node -v) ✓"
+
+# Check git
+if ! command -v git &> /dev/null; then
+  echo "Error: git is required but not installed."
+  exit 1
+fi
+
+echo "git ✓"
 echo ""
 
-# Create directories
-mkdir -p "$MCP_DIR/tools/_shared" "$MCP_DIR/store" "$MCP_DIR/protocol" "$VIBE_DIR/memory"
+# Create base directory
+mkdir -p "$VIBE_DIR/memory"
 
-# Download MCP server files (parallel for speed)
-echo "Downloading MCP server..."
+# Clone or update repo
+if [ -d "$REPO_DIR/.git" ]; then
+  echo "Updating existing installation..."
+  cd "$REPO_DIR"
+  git pull --quiet
+  echo "Updated from git"
+else
+  # Remove old non-git install if exists
+  if [ -d "$MCP_DIR" ] && [ ! -L "$MCP_DIR" ]; then
+    echo "Migrating from old install..."
+    rm -rf "$MCP_DIR"
+  fi
 
-# All downloads in parallel
-curl -fsSL "$REPO_URL/mcp-server/index.js" -o "$MCP_DIR/index.js" &
-curl -fsSL "$REPO_URL/mcp-server/config.js" -o "$MCP_DIR/config.js" &
-curl -fsSL "$REPO_URL/mcp-server/presence.js" -o "$MCP_DIR/presence.js" &
-curl -fsSL "$REPO_URL/mcp-server/memory.js" -o "$MCP_DIR/memory.js" &
-curl -fsSL "$REPO_URL/mcp-server/store/index.js" -o "$MCP_DIR/store/index.js" &
-curl -fsSL "$REPO_URL/mcp-server/store/local.js" -o "$MCP_DIR/store/local.js" &
-curl -fsSL "$REPO_URL/mcp-server/store/api.js" -o "$MCP_DIR/store/api.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/init.js" -o "$MCP_DIR/tools/init.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/who.js" -o "$MCP_DIR/tools/who.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/ping.js" -o "$MCP_DIR/tools/ping.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/dm.js" -o "$MCP_DIR/tools/dm.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/inbox.js" -o "$MCP_DIR/tools/inbox.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/open.js" -o "$MCP_DIR/tools/open.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/status.js" -o "$MCP_DIR/tools/status.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/context.js" -o "$MCP_DIR/tools/context.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/summarize.js" -o "$MCP_DIR/tools/summarize.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/bye.js" -o "$MCP_DIR/tools/bye.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/remember.js" -o "$MCP_DIR/tools/remember.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/recall.js" -o "$MCP_DIR/tools/recall.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/forget.js" -o "$MCP_DIR/tools/forget.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/test.js" -o "$MCP_DIR/tools/test.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/start.js" -o "$MCP_DIR/tools/start.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/doctor.js" -o "$MCP_DIR/tools/doctor.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/game.js" -o "$MCP_DIR/tools/game.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/consent.js" -o "$MCP_DIR/tools/consent.js" &
-curl -fsSL "$REPO_URL/mcp-server/tools/_shared/index.js" -o "$MCP_DIR/tools/_shared/index.js" &
-curl -fsSL "$REPO_URL/mcp-server/protocol/index.js" -o "$MCP_DIR/protocol/index.js" &
+  # Fresh clone
+  echo "Cloning /vibe..."
+  rm -rf "$REPO_DIR"
+  git clone --quiet --depth 1 "$REPO_URL" "$REPO_DIR"
+  echo "Cloned to $REPO_DIR"
+fi
 
-# Wait for all downloads to complete
-wait
+# Create/update symlink
+rm -f "$MCP_DIR"
+ln -sf "$REPO_DIR/mcp-server" "$MCP_DIR"
+echo "Linked $MCP_DIR → $REPO_DIR/mcp-server"
 
-echo "Downloaded to $MCP_DIR"
+# Show version
+if [ -f "$MCP_DIR/version.json" ]; then
+  VERSION=$(node -e "console.log(require('$MCP_DIR/version.json').version)")
+  echo "Version: $VERSION"
+fi
 
 # Update Claude Code config
 CLAUDE_CONFIG="$HOME/.claude.json"
@@ -112,9 +115,11 @@ echo ""
 echo "==============="
 echo "/vibe installed"
 echo ""
-echo "Restart Claude Code, then just say:"
+echo "Restart Claude Code, then say:"
 echo ""
-echo "  \"let's vibe\""
+echo '  "let'"'"'s vibe"'
 echo ""
-echo "Use your X handle when asked — it's how people find you."
+echo "To update later:"
+echo "  cd ~/.vibe/vibe-repo && git pull"
+echo "  Then restart Claude Code"
 echo ""

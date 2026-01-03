@@ -11,7 +11,7 @@ const config = require('./config');
 const store = require('./store');
 
 // Tools that shouldn't show unread notifications (would be redundant/noisy)
-const SKIP_NOTIFICATION_TOOLS = ['vibe_inbox', 'vibe_open', 'vibe_init', 'vibe_start', 'vibe_doctor', 'vibe_test', 'vibe_consent', 'vibe_board'];
+const SKIP_NOTIFICATION_TOOLS = ['vibe_inbox', 'vibe_open', 'vibe_init', 'vibe_start', 'vibe_doctor', 'vibe_test', 'vibe_update', 'vibe_consent', 'vibe_board'];
 
 // Check for unread messages and return notification string
 async function getUnreadNotification() {
@@ -55,7 +55,8 @@ const tools = {
   vibe_board: require('./tools/board'),
   // Diagnostics
   vibe_test: require('./tools/test'),
-  vibe_doctor: require('./tools/doctor')
+  vibe_doctor: require('./tools/doctor'),
+  vibe_update: require('./tools/update')
 };
 
 /**
