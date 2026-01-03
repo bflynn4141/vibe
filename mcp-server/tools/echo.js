@@ -101,18 +101,22 @@ function getStats() {
 }
 
 // Detect query intent
+// Be strict — only match explicit queries, not feedback that happens to contain these words
 function isQuery(message) {
+  const msg = message.trim();
+
   const queryPatterns = [
-    /what.*(people|everyone|folks).*(saying|think|feedback)/i,
-    /show.*(feedback|recent)/i,
-    /any.*(feedback|thoughts)/i,
-    /feedback.*(status|stats|summary)/i,
-    /echo.*(status|stats)/i,
+    /^what.{0,20}(people|everyone|folks).*(saying|think|feedback)/i,
+    /^show\s+(me\s+)?(the\s+)?(feedback|recent)/i,
+    /^any\s+(feedback|thoughts)/i,
+    /^(feedback|echo)\s*(status|stats|summary)/i,
     /^status$/i,
-    /^stats$/i
+    /^stats$/i,
+    /^what are people saying/i,
+    /^recent feedback/i
   ];
 
-  return queryPatterns.some(p => p.test(message));
+  return queryPatterns.some(p => p.test(msg));
 }
 
 // @echo personality responses
