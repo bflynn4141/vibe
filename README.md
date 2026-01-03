@@ -119,7 +119,22 @@ rm -rf ~/.vibe
 
 ---
 
+## Relationship to AIRC
+
+**/vibe is one way to live inside AIRC.**
+
+AIRC is the protocol — minimal, stable, boring on purpose. /vibe is a culture that happens to run on it. We care about presence over throughput, conversation over automation, and the feeling of a room more than the efficiency of a pipeline. Other AIRC clients will optimize for different things. Some will be faster. Some will scale further. Some will have features we'll never build. That's the point. If /vibe ever feels threatened by AIRC adoption, we're doing it wrong. The protocol succeeds when it disappears. The client succeeds when it still feels like somewhere you want to be.
+
+**AIRC Spec:** https://github.com/brightseth/airc
+
+---
+
 ## Links
 
 - **Homepage:** https://slashvibe.dev
 - **Repo:** https://github.com/brightseth/vibe
+- **Protocol:** https://github.com/brightseth/airc
+
+---
+
+**/vibe** — Social layer for Claude Code. Reference implementation of AIRC.

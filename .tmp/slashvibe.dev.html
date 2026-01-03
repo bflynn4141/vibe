@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+/vibe — Social layer for Claude Code
+
+WHAT IT IS:
+  An MCP server that connects Claude Code users in a shared space.
+  Local-first. Open source. Inspectable.
+
+  MCP (Model Context Protocol) lets Claude Code use external tools.
+  /vibe adds presence, messaging, and memory to your Claude session.
+
+INSTALL:
+  Tell Claude: "go to slashvibe.dev and install /vibe"
+
+  Claude reads this page and runs the installer.
+
+USAGE:
+  Just talk to Claude. It figures out what to do.
+
+  "I'm @davemorin, working on social apps"
+  "who's around?"
+  "message stan about the bug"
+  "remember that gene prefers async"
+
+IDENTITY:
+  Use your X handle. It's how people find you.
+  No auth yet — just convention. Easy to verify: x.com/yourhandle
+
+WHAT GETS INSTALLED:
+  ~/.vibe/mcp-server/     — The MCP server (Node.js, ~15 files)
+  ~/.vibe/memory/         — Your local thread memories (JSONL, inspectable)
+  ~/.claude.json updated  — Registers the MCP server with Claude Code
+
+SOURCE: https://github.com/brightseth/vibe
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>/vibe — Social layer for Claude Code</title>
+    <meta name="description" content="Talk to other Claude Code users without leaving your session. Just say who's around or message someone.">
+    <meta property="og:title" content="/vibe — Social layer for Claude Code">
+    <meta property="og:description" content="Talk to other Claude Code users without leaving your session. Just say who's around or message someone.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            padding: 48px 20px;
+        }
+        .container { max-width: 540px; margin: 0 auto; }
+
+        h1 { font-size: 56px; font-weight: 400; margin-bottom: 8px; letter-spacing: -2px; }
+        .tagline { font-size: 17px; color: #00ff00; margin-bottom: 8px; }
+        .sub { font-size: 14px; color: #666; margin-bottom: 40px; line-height: 1.6; }
+
+        .install {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .install code {
+            color: #00ff00;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .copy {
+            background: #00ff00;
+            border: none;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+        .copy:hover { background: #00cc00; }
+
+        .note { font-size: 11px; color: #444; margin-bottom: 40px; }
+
+        .terminal {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.9;
+            margin-bottom: 40px;
+        }
+        .prompt { color: #00ff00; }
+        .dim { color: #666; }
+        .bright { color: #fff; }
+
+        .features {
+            margin-bottom: 40px;
+        }
+        .feature {
+            margin-bottom: 24px;
+        }
+        .feature-title {
+            font-size: 13px;
+            color: #00ff00;
+            margin-bottom: 6px;
+        }
+        .feature-desc {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .beta {
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+            border-radius: 6px;
+            padding: 16px;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .beta strong { color: #00ff00; }
+
+        .stats {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 40px;
+        }
+        .stat-value {
+            color: #00ff00;
+            font-size: 20px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .stat-label { color: #444; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .footer {
+            font-size: 11px;
+            color: #333;
+            padding-top: 20px;
+            border-top: 1px solid #111;
+        }
+        .footer a { color: #444; text-decoration: none; }
+        .footer a:hover { color: #00ff00; }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 40px; }
+            .install { flex-direction: column; align-items: stretch; }
+            .install code { font-size: 11px; text-align: center; }
+            .copy { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>/vibe</h1>
+        <p class="tagline">Social layer for Claude Code.</p>
+        <p class="sub">Talk to other Claude Code users without leaving your session. Not commands — conversation.</p>
+
+        <div class="install" style="justify-content: center;">
+            <code style="color: #fff;">"go to slashvibe.dev and install /vibe"</code>
+        </div>
+        <p class="note">Tell Claude that. It reads this page and sets it up.</p>
+
+        <details style="margin-bottom: 40px;">
+            <summary style="color: #444; font-size: 11px; cursor: pointer;">Or install manually</summary>
+            <div class="install" style="margin-top: 12px;">
+                <code>curl -fsSL raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash</code>
+                <button class="copy" onclick="copy()">Copy</button>
+            </div>
+            <p class="note">Then restart Claude Code.</p>
+        </details>
+
+        <div class="terminal">
+            <div><span class="prompt">you:</span> let's vibe</div>
+            <div class="dim" style="margin-bottom: 8px;">First, who are you? Use your X handle.</div>
+            <div><span class="prompt">you:</span> I'm @davemorin, working on social apps</div>
+            <div class="dim" style="margin-bottom: 12px;">✓ You're @davemorin</div>
+            <div class="dim">● @sethgoldstein 🔥 — building /vibe</div>
+            <div class="dim" style="margin-bottom: 12px;">● @betashop 🧠 — agent SDK</div>
+            <div class="dim" style="margin-bottom: 12px;">💬 Try: "message @sethgoldstein"</div>
+        </div>
+
+        <p class="note" style="margin-top: 16px; margin-bottom: 32px;">Just say "let's vibe" to start.</p>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-title">"who's around?"</div>
+                <div class="feature-desc">See who's building. What file they're in. What branch they're on.</div>
+            </div>
+            <div class="feature">
+                <div class="feature-title">"message stan about the bug"</div>
+                <div class="feature-desc">DM without context-switching. Claude sends it.</div>
+            </div>
+            <div class="feature">
+                <div class="feature-title">"remember that gene prefers async"</div>
+                <div class="feature-desc">Build memory about collaborators. Persists across sessions.</div>
+            </div>
+        </div>
+
+        <div class="beta">
+            <strong>What you're installing:</strong> An MCP server (~15 files) that adds presence, messaging, and memory to Claude Code.
+            Local-first. Open source. Your memories stay in ~/.vibe/memory/ as inspectable JSONL files.
+            <br><br>
+            <a href="https://github.com/brightseth/vibe" style="color: #00ff00;">View source on GitHub →</a>
+        </div>
+
+        <div class="stats">
+            <div>
+                <span class="stat-value" id="builders">12</span>
+                <span class="stat-label">Builders</span>
+            </div>
+            <div>
+                <span class="stat-value" id="messages">47</span>
+                <span class="stat-label">Messages</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="https://github.com/brightseth/vibe">GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        function copy() {
+            navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash');
+            const btn = document.querySelector('.copy');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        }
+
+        fetch('/api/stats')
+            .then(r => r.json())
+            .then(data => {
+                if (data.users) document.getElementById('builders').textContent = data.users;
+                if (data.messages) document.getElementById('messages').textContent = data.messages;
+            })
+            .catch(() => {});
+    </script>
+</body>
+</html>
