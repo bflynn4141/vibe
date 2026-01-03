@@ -16,7 +16,8 @@
     { "source": "/api/stats", "destination": "/api/stats.js" },
     { "source": "/api/gigabrain/ingest", "destination": "/api/gigabrain/ingest.js" },
     { "source": "/api/gigabrain/query", "destination": "/api/gigabrain/query.js" },
-    { "source": "/api/gigabrain/backfill", "destination": "/api/gigabrain/backfill.js" }
+    { "source": "/api/gigabrain/backfill", "destination": "/api/gigabrain/backfill.js" },
+    { "source": "/api/board", "destination": "/api/board.js" }
   ],
   "headers": [
     {
