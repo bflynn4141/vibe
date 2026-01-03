@@ -76,7 +76,7 @@ async function handler(args) {
 
   // Burst notification (5+ messages in one thread)
   if (burst.triggered && burst.thread === them) {
-    display += `\n\n💬 _${burst.count} messages with @${them} this session. Run \`vibe summarize\` anytime._`;
+    display += `\n\n💬 _${burst.count} messages with @${them} — say "summarize" when done_`;
   }
 
   return { display };

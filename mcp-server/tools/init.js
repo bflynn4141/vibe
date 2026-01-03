@@ -93,7 +93,7 @@ Local config saved. Heartbeats will use username fallback.`
   try {
     const unreadCount = await store.getUnreadCount(h);
     if (unreadCount > 0) {
-      unreadNotice = `\n\n📬 **${unreadCount} unread message${unreadCount > 1 ? 's' : ''}** — \`vibe inbox\` to read`;
+      unreadNotice = `\n\n📬 **${unreadCount} unread message${unreadCount > 1 ? 's' : ''}** — say "check my messages"`;
     }
   } catch (e) {}
 

@@ -9,14 +9,14 @@
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
 // Welcome message from @vibe
-const WELCOME_MESSAGE = `Hey! Welcome to /vibe 👋
+const WELCOME_MESSAGE = `Welcome to /vibe 👋
 
-A few things to try:
-• \`vibe who\` — see who's building right now
-• \`vibe dm @seth "hello!"\` — say hi to someone
-• \`vibe status shipping\` — share what you're up to
+Just talk to Claude naturally:
+• "who's around?" — see who's building
+• "message seth and say hello" — DM someone
+• "I'm heads down shipping" — set your status
 
-This is a small room. Everyone here is building something. Be curious about what others are working on.
+This is a small room. Everyone here is building something. Say hi to someone.
 
 — @vibe`;
 

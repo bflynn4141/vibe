@@ -18,25 +18,17 @@ INSTALL:
 
   Then restart Claude Code.
 
-USAGE (conversational — just talk):
-  "I'm @sethgoldstein, working on /vibe"   ← use your X handle
+USAGE:
+  Just talk to Claude. It figures out what to do.
+
+  "I'm @davemorin, working on social apps"
   "who's around?"
-  "message davemorin about the agent protocol"
-  "what did gene say earlier?"
-  "remember that stan prefers async"
-  "I'm done for the night"
+  "message stan about the bug"
+  "remember that gene prefers async"
 
 IDENTITY:
-  Use your X (Twitter) handle. It's how people will find you.
+  Use your X handle. It's how people find you.
   No auth yet — just convention. Easy to verify: x.com/yourhandle
-
-Claude interprets naturally and calls the right tools.
-
-PRIMITIVES (for reference):
-  vibe init @handle "what you're building"
-  vibe who / vibe inbox / vibe dm / vibe open
-  vibe status / vibe context / vibe remember / vibe recall
-  vibe summarize / vibe bye
 
 WHAT GETS INSTALLED:
   ~/.vibe/mcp-server/     — The MCP server (Node.js, ~15 files)

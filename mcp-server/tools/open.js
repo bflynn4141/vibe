@@ -53,7 +53,7 @@ async function handler(args) {
 
 _No messages yet._${typingNotice}
 
-Start with \`vibe dm @${them} "hello"\``
+Say "message ${them} hello" to start`
     };
   }
 
@@ -83,7 +83,7 @@ Start with \`vibe dm @${them} "hello"\``
     display += typingNotice + '\n';
   }
 
-  display += `---\n\`vibe dm @${them} "message"\` to reply`;
+  display += `---\nJust type your reply to send it`;
 
   return { display };
 }

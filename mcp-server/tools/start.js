@@ -107,14 +107,14 @@ Example: "I'm @davemorin, working on social apps"`
   try {
     const unreadCount = await store.getUnreadCount(myHandle);
     if (unreadCount > 0) {
-      display += `---\n📬 **${unreadCount} unread** — "check my messages" or \`vibe inbox\`\n\n`;
+      display += `---\n📬 **${unreadCount} unread** — say "check my messages"\n\n`;
     }
   } catch (e) {}
 
   // Step 4: Suggest connection (if there are others)
   if (others.length > 0) {
     const suggestion = others[Math.floor(Math.random() * Math.min(others.length, 3))];
-    display += `---\n💬 _Try: "message @${suggestion.handle}" or just start talking_`;
+    display += `---\n💬 _Say "message ${suggestion.handle}" to start a conversation_`;
   }
 
   return { display };

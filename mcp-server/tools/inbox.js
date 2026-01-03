@@ -24,7 +24,7 @@ async function handler(args) {
 
   if (!threads || threads.length === 0) {
     return {
-      display: `${header('Inbox')}\n\n${emptyState('No messages yet.', 'Send one with `vibe dm @someone "hello"`')}`
+      display: `${header('Inbox')}\n\n${emptyState('No messages yet.', 'Say "message someone" to start a conversation')}`
     };
   }
 
@@ -54,7 +54,7 @@ async function handler(args) {
     display += '\n';
   });
 
-  display += `${divider()}\`vibe open @handle\` to read full thread`;
+  display += `${divider()}Say "open thread with @handle" to read more`;
 
   return { display };
 }

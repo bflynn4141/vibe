@@ -89,7 +89,7 @@ _More people are joining soon._`
     display += '\n';
   }
 
-  display += `---\n\`vibe dm @handle "message"\` to reach someone`;
+  display += `---\nSay "message @handle" to reach someone`;
 
   return { display };
 }

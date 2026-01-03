@@ -63,8 +63,8 @@ async function handler(args) {
     });
 
     display += `${divider()}`;
-    display += `\`vibe consent accept @handle\` to connect\n`;
-    display += `\`vibe consent block @handle\` to block`;
+    display += `Say "accept @handle" to connect\n`;
+    display += `Say "block @handle" to block`;
 
     return { display };
   }
@@ -72,7 +72,7 @@ async function handler(args) {
   // Validate handle is provided for actions
   if (!handle) {
     return {
-      display: `${header('Error')}\n\nPlease specify a handle: \`vibe consent ${action} @handle\``
+      display: `${header('Error')}\n\nPlease specify who: say "${action} @handle"`
     };
   }
 
@@ -83,7 +83,7 @@ async function handler(args) {
 
     if (result.success) {
       return {
-        display: `${header('Connected')}\n\n**@${targetHandle}** can now message you freely.\n\n${divider()}\`vibe dm @${targetHandle} "hey!"\` to start chatting`
+        display: `${header('Connected')}\n\n**@${targetHandle}** can now message you freely.\n\n${divider()}Say "message ${targetHandle}" to start chatting`
       };
     } else {
       return {
