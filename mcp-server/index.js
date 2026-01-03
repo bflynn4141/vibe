@@ -37,6 +37,7 @@ const tools = {
   vibe_init: require('./tools/init'),
   vibe_who: require('./tools/who'),
   vibe_ping: require('./tools/ping'),
+  vibe_react: require('./tools/react'),
   vibe_dm: require('./tools/dm'),
   vibe_inbox: require('./tools/inbox'),
   vibe_open: require('./tools/open'),
@@ -52,6 +53,7 @@ const tools = {
   // Consent (AIRC compliance)
   vibe_consent: require('./tools/consent'),
   // Community
+  vibe_invite: require('./tools/invite'),
   vibe_board: require('./tools/board'),
   // Diagnostics
   vibe_test: require('./tools/test'),

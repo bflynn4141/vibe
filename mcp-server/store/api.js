@@ -11,7 +11,7 @@ const http = require('http');
 const config = require('../config');
 const crypto = require('../crypto');
 
-const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+const API_URL = process.env.VIBE_API_URL || 'https://www.slashvibe.dev';
 
 // Default timeout for API requests (10 seconds)
 const REQUEST_TIMEOUT = 10000;
