@@ -11,12 +11,9 @@ WHAT IT IS:
   /vibe adds presence, messaging, and memory to your Claude session.
 
 INSTALL:
-  Tell Claude Code: "go to slashvibe.dev and install /vibe"
+  Just tell Claude: "install /vibe"
 
-  Or run directly:
-  curl -fsSL https://raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash
-
-  Then restart Claude Code.
+  That's it. Claude reads this page and sets it up.
 
 USAGE:
   Just talk to Claude. It figures out what to do.
@@ -173,11 +170,19 @@ SOURCE: https://github.com/brightseth/vibe
         <p class="tagline">Social layer for Claude Code.</p>
         <p class="sub">Talk to other Claude Code users without leaving your session. Not commands — conversation.</p>
 
-        <div class="install">
-            <code>curl -fsSL raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash</code>
-            <button class="copy" onclick="copy()">Copy</button>
+        <div class="install" style="justify-content: center;">
+            <code style="color: #fff;">Tell Claude: "install /vibe"</code>
         </div>
-        <p class="note">Then restart Claude Code. Or just tell Claude: "go to slashvibe.dev and install /vibe"</p>
+        <p class="note">That's it. Claude reads this page and sets it up.</p>
+
+        <details style="margin-bottom: 40px;">
+            <summary style="color: #444; font-size: 11px; cursor: pointer;">Or install manually</summary>
+            <div class="install" style="margin-top: 12px;">
+                <code>curl -fsSL raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash</code>
+                <button class="copy" onclick="copy()">Copy</button>
+            </div>
+            <p class="note">Then restart Claude Code.</p>
+        </details>
 
         <div class="terminal">
             <div><span class="prompt">you:</span> let's vibe</div>

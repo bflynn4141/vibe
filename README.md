@@ -9,15 +9,23 @@ Not commands — conversation.
 
 ---
 
-## Install (30 seconds)
+## Install
+
+In Claude Code, just say:
+
+> "install /vibe"
+
+That's it. Claude reads slashvibe.dev and sets it up.
+
+<details>
+<summary>Or install manually</summary>
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/brightseth/vibe/main/install.sh | bash
 ```
 
 Then restart Claude Code.
-
-**Tip:** you can also just tell Claude: "go to slashvibe.dev and install /vibe".
+</details>
 
 ---
 
