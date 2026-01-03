@@ -125,6 +125,9 @@ function formatAge(timestamp) {
 
   const now = Date.now();
   const then = new Date(timestamp).getTime();
+
+  if (isNaN(then)) return 'unknown';
+
   const diff = now - then;
 
   const minutes = Math.floor(diff / (1000 * 60));

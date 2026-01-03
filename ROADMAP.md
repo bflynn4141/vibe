@@ -33,10 +33,10 @@
 - **Fix:** Improve welcome DM, add `vibe start` entry point
 - **Files:** `api/users.js`, `mcp-server/tools/start.js`
 
-### S4. Fix Known Bugs
-- [ ] Bridge crashes (exit -9) — improve error handling
-- [ ] Presence "NaN ago" display bug
-- [ ] Doctor shows false negatives in ephemeral mode
+### S4. Fix Known Bugs ✅ DONE
+- [x] Bridge crashes (exit -9) — added error backoff, global error handlers, health logging
+- [x] Presence "NaN ago" display bug — fixed in 5 timeAgo functions
+- [x] Doctor shows false negatives in ephemeral mode — detects ephemeral mode
 
 ---
 

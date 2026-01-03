@@ -69,8 +69,13 @@ function displayHandle(handle) {
  * @returns {string} - Relative time string
  */
 function formatTimeAgo(timestamp) {
+  if (timestamp === undefined || timestamp === null) return 'unknown';
+
   const now = Date.now();
   const time = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+
+  if (isNaN(time)) return 'unknown';
+
   const seconds = Math.floor((now - time) / 1000);
 
   if (seconds < 0) return 'just now';

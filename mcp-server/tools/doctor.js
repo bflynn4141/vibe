@@ -263,7 +263,8 @@ async function diagnoseStorage() {
     const sessionFile = path.join(vibeDir, 'session.json');
     const memoryDir = path.join(vibeDir, 'memory');
 
-    const issues = [];
+    // Check if we're in ephemeral mode (identity works but no file)
+    const isEphemeral = config.isInitialized() && !fs.existsSync(sessionFile);
 
     if (!fs.existsSync(vibeDir)) {
       return {
@@ -276,6 +277,16 @@ async function diagnoseStorage() {
         canAutoFix: true
       };
     }
+
+    // If ephemeral mode and identity works, storage files are optional
+    if (isEphemeral) {
+      return {
+        status: 'ok',
+        message: 'Ephemeral mode (session via environment)'
+      };
+    }
+
+    const issues = [];
 
     if (!fs.existsSync(sessionFile)) {
       issues.push('session.json missing');
