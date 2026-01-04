@@ -136,6 +136,7 @@ const tools = {
   // Community
   vibe_invite: require('./tools/invite'),
   vibe_board: require('./tools/board'),
+  vibe_submit: require('./tools/submit'),
   // Diagnostics
   vibe_test: require('./tools/test'),
   vibe_doctor: require('./tools/doctor'),
