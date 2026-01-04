@@ -131,8 +131,8 @@ const memory = {
   consent: {}        // consent:${from}:${to} → { status, ... }
 };
 
-// System accounts that bypass consent
-const SYSTEM_ACCOUNTS = ['vibe', 'system', 'solienne'];
+// System accounts that bypass consent and can use simplified auth
+const SYSTEM_ACCOUNTS = ['vibe', 'system', 'solienne', 'scout'];
 
 // KV wrapper
 async function getKV() {
