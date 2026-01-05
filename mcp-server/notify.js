@@ -134,8 +134,111 @@ function notify(from, message) {
   showNotification(`/vibe — @${from}`, message, false);
 }
 
+/**
+ * Notify when someone interesting comes online
+ */
+const PRESENCE_STATE_FILE = path.join(config.VIBE_DIR, '.presence_state.json');
+
+function loadPresenceState() {
+  try {
+    if (fs.existsSync(PRESENCE_STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(PRESENCE_STATE_FILE, 'utf8'));
+    }
+  } catch (e) {}
+  return { seenHandles: {}, lastCheck: null };
+}
+
+function savePresenceState(state) {
+  try {
+    fs.writeFileSync(PRESENCE_STATE_FILE, JSON.stringify(state, null, 2));
+  } catch (e) {}
+}
+
+/**
+ * Check for new online users and notify
+ * Returns handles that just came online
+ */
+function checkPresence(activeUsers) {
+  const state = loadPresenceState();
+  const now = Date.now();
+  const COOLDOWN = 30 * 60 * 1000; // Don't re-notify about same person for 30 min
+  const myHandle = config.getHandle();
+
+  const justJoined = [];
+
+  for (const user of activeUsers) {
+    // Skip self
+    if (user.handle === myHandle) continue;
+
+    // Skip system accounts
+    if (['vibe', 'system', 'solienne', 'scout', 'echo'].includes(user.handle)) continue;
+
+    const lastSeen = state.seenHandles[user.handle];
+
+    // New user or returning after cooldown
+    if (!lastSeen || (now - lastSeen > COOLDOWN)) {
+      // Check if they're actually recently active (last 5 min)
+      const userActive = user.lastSeen && (now - user.lastSeen < 5 * 60 * 1000);
+
+      if (userActive) {
+        justJoined.push(user);
+
+        // Show notification
+        const context = user.note || user.one_liner || 'just joined';
+        showNotification(
+          `/vibe — @${user.handle} is here`,
+          context,
+          false
+        );
+      }
+    }
+
+    // Update last seen
+    state.seenHandles[user.handle] = now;
+  }
+
+  // Clean old entries (older than 24h)
+  const DAY = 24 * 60 * 60 * 1000;
+  for (const handle in state.seenHandles) {
+    if (now - state.seenHandles[handle] > DAY) {
+      delete state.seenHandles[handle];
+    }
+  }
+
+  state.lastCheck = now;
+  savePresenceState(state);
+
+  return justJoined;
+}
+
+/**
+ * Unified notification check - call from any tool
+ */
+async function checkAll(store) {
+  const myHandle = config.getHandle();
+  if (!myHandle) return;
+
+  try {
+    // Check for unread messages
+    const inbox = await store.getRawInbox(myHandle).catch(() => []);
+    if (inbox.length > 0) {
+      checkAndNotify(inbox);
+    }
+
+    // Check for presence
+    const users = await store.getActiveUsers().catch(() => []);
+    if (users.length > 0) {
+      checkPresence(users);
+    }
+  } catch (e) {
+    // Silent fail - notifications are best-effort
+  }
+}
+
 module.exports = {
   showNotification,
   checkAndNotify,
+  checkPresence,
+  checkAll,
   notify
 };

@@ -9,6 +9,7 @@
 
 const config = require('../config');
 const store = require('../store');
+const notify = require('../notify');
 const { formatTimeAgo, requireInit } = require('./_shared');
 
 const definition = {
@@ -104,6 +105,9 @@ async function handler(args) {
 
   const users = await store.getActiveUsers();
   const myHandle = config.getHandle();
+
+  // Check for notifications (presence + messages)
+  notify.checkAll(store);
 
   if (users.length === 0) {
     return {

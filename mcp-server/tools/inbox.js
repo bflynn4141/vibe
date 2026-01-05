@@ -4,6 +4,7 @@
 
 const config = require('../config');
 const store = require('../store');
+const notify = require('../notify');
 const { requireInit, header, emptyState, formatTimeAgo, truncate, divider } = require('./_shared');
 
 const definition = {
@@ -21,6 +22,9 @@ async function handler(args) {
 
   const myHandle = config.getHandle();
   const threads = await store.getInbox(myHandle);
+
+  // Check for notifications (will handle deduplication internally)
+  notify.checkAll(store);
 
   if (!threads || threads.length === 0) {
     return {
