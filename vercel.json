@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/echo",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
@@ -48,6 +54,7 @@
     { "source": "/api/gigabrain/ingest", "destination": "/api/gigabrain/ingest.js" },
     { "source": "/api/gigabrain/query", "destination": "/api/gigabrain/query.js" },
     { "source": "/api/gigabrain/backfill", "destination": "/api/gigabrain/backfill.js" },
-    { "source": "/api/board", "destination": "/api/board.js" }
+    { "source": "/api/board", "destination": "/api/board.js" },
+    { "source": "/api/cron/echo", "destination": "/api/cron/echo.js" }
   ]
 }

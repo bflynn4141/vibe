@@ -1,0 +1,13 @@
+{
+  "users": {},
+  "connections": {
+    "introduced": [],
+    "confirmed": []
+  },
+  "roomState": {
+    "lastActivity": null,
+    "lastDigest": null,
+    "quietSince": null
+  },
+  "lastMessages": {}
+}
