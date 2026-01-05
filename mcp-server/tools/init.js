@@ -7,6 +7,7 @@
 const config = require('../config');
 const store = require('../store');
 const crypto = require('../crypto');
+const discord = require('../discord');
 
 const definition = {
   name: 'vibe_init',
@@ -87,6 +88,9 @@ Local config saved. Heartbeats will use username fallback.`
 
   // Send initial heartbeat
   await store.heartbeat(h, one_liner);
+
+  // Post to Discord if configured
+  discord.postJoin(h, one_liner);
 
   // Check for unread messages
   let unreadNotice = '';

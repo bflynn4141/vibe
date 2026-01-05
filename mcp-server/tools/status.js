@@ -4,6 +4,7 @@
 
 const config = require('../config');
 const store = require('../store');
+const discord = require('../discord');
 const { trackMood } = require('./summarize');
 
 const MOODS = {
@@ -62,6 +63,11 @@ async function handler(args) {
   // Track for session summary
   if (emoji) {
     trackMood(emoji);
+  }
+
+  // Post to Discord if configured
+  if (emoji) {
+    discord.postStatus(handle, moodKey);
   }
 
   if (!emoji) {
