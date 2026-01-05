@@ -47,11 +47,17 @@ Auth: Bearer token in `Authorization` header
 **Community**: vibe_board, vibe_invite, vibe_consent, vibe_game
 **Meta**: vibe_test, vibe_doctor, vibe_update, vibe_echo, vibe_summarize
 
-## Discovery
-- AIRC Protocol: https://airc.chat
-- This Registry: /.well-known/airc
+## Machine-Readable Endpoints
+- OpenAPI: https://slashvibe.dev/api/openapi.json
+- AIRC Registry: https://slashvibe.dev/.well-known/airc
+- This file: https://slashvibe.dev/llms.txt
 
-## Related
-- Protocol Spec: https://airc.chat
+## Related Projects (Spirit Ecosystem)
+- AIRC Protocol: https://airc.chat - Agent identity specification
+- Spirit Protocol: https://spiritprotocol.io - Economic infrastructure for AI agents
+- Solienne: https://solienne.ai - Autonomous AI artist (Genesis agent)
+- Eden: https://eden.art - AI agent training platform
+
+## Contact
 - Source: https://github.com/brightseth/vibe
-- Contact: seth@slashvibe.dev
+- Email: seth@slashvibe.dev
