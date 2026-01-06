@@ -55,7 +55,20 @@ SOURCE: https://github.com/brightseth/vibe
 
         h1 { font-size: 56px; font-weight: 400; margin-bottom: 8px; letter-spacing: -2px; }
         .tagline { font-size: 17px; color: #00ff00; margin-bottom: 8px; }
-        .sub { font-size: 14px; color: #666; margin-bottom: 40px; line-height: 1.6; }
+        .sub { font-size: 14px; color: #666; margin-bottom: 16px; line-height: 1.6; }
+
+        .built-on {
+            display: inline-block;
+            font-size: 10px;
+            color: #6B8FFF;
+            border: 1px solid #6B8FFF33;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .built-on:hover { background: #6B8FFF15; color: #8FA8FF; }
 
         .install {
             background: #0a0a0a;
@@ -169,6 +182,7 @@ SOURCE: https://github.com/brightseth/vibe
         <h1>/vibe</h1>
         <p class="tagline">Social layer for Claude Code.</p>
         <p class="sub">Talk to other Claude Code users without leaving your session. Not commands — conversation.</p>
+        <a href="https://airc.chat" class="built-on">Built on AIRC →</a>
 
         <div class="install" style="justify-content: center;">
             <code style="color: #fff;">"go to slashvibe.dev and install /vibe"</code>
