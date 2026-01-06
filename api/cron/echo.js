@@ -152,6 +152,11 @@ async function postToBoard(content, category = 'general') {
   });
 }
 
+async function postToDiscord(type, data) {
+  console.log(`[echo] Discord post: ${type}`);
+  return request('POST', '/api/discord-bridge', { type, data });
+}
+
 // ============ CLAUDE API ============
 
 async function askClaude(prompt) {
@@ -199,6 +204,12 @@ Write a warm welcome message. Briefly explain what /vibe is (social layer for de
       'general'
     );
 
+    // Post to Discord
+    await postToDiscord('join', {
+      handle: user.handle,
+      building
+    });
+
     memory.users[user.handle] = {
       firstSeen: Date.now(),
       lastSeen: Date.now(),
@@ -235,8 +246,15 @@ async function maybePostDailyDigest(memory, userCount, messageCount) {
 
   // Post digest once every 24 hours, but only if there was activity
   if (hoursSinceDigest >= 24 && (userCount > 0 || messageCount > 0)) {
-    const digest = `Daily vibe check: ${Object.keys(memory.users || {}).length} total vibers, ${userCount} online now`;
+    const totalVibers = Object.keys(memory.users || {}).length;
+    const digest = `Daily vibe check: ${totalVibers} total vibers, ${userCount} online now`;
+
+    // Post to board
     await postToBoard(digest, 'general');
+
+    // Post to Discord
+    await postToDiscord('digest', { content: digest });
+
     memory.lastDigest = now;
     console.log('[echo] Posted daily digest');
   }

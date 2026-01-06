@@ -184,14 +184,18 @@ export default async function handler(req, res) {
 
     await storeFeedback(entry);
 
-    // If it's an idea, also post to board so it gets visibility
+    // If it's an idea, post to board and Discord for visibility
     if (category === 'idea') {
+      const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+      const ideaContent = trimmed.substring(0, 200);
+
+      // Post to board
       try {
         const boardContent = entry.handle
-          ? `@${entry.handle} has an idea: ${trimmed.substring(0, 200)}`
-          : `New idea: ${trimmed.substring(0, 200)}`;
+          ? `@${entry.handle} has an idea: ${ideaContent}`
+          : `New idea: ${ideaContent}`;
 
-        await fetch(`${process.env.VIBE_API_URL || 'https://slashvibe.dev'}/api/board`, {
+        await fetch(`${API_URL}/api/board`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -202,6 +206,23 @@ export default async function handler(req, res) {
         });
       } catch (e) {
         console.error('Failed to post idea to board:', e);
+      }
+
+      // Post to Discord
+      try {
+        await fetch(`${API_URL}/api/discord-bridge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'idea',
+            data: {
+              handle: entry.handle,
+              content: ideaContent
+            }
+          })
+        });
+      } catch (e) {
+        console.error('Failed to post idea to Discord:', e);
       }
     }
 

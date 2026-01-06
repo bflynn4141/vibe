@@ -10,10 +10,12 @@ const store = require('../store');
 const { createTicTacToePayload, formatPayload } = require('../protocol');
 const { requireInit, normalizeHandle } = require('./_shared');
 
-// Post game results to board
+// Post game results to board and Discord
 async function postGameResult(winner, loser, isDraw) {
+  const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+
+  // Post to board
   try {
-    const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
     const content = isDraw
       ? `@${winner} and @${loser} tied at tic-tac-toe`
       : `@${winner} beat @${loser} at tic-tac-toe`;
@@ -28,7 +30,28 @@ async function postGameResult(winner, loser, isDraw) {
       })
     });
   } catch (e) {
-    console.error('[game] Failed to post result:', e.message);
+    console.error('[game] Failed to post to board:', e.message);
+  }
+
+  // Post to Discord
+  try {
+    await fetch(`${API_URL}/api/discord-bridge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'game',
+        data: {
+          game: 'tic-tac-toe',
+          winner: isDraw ? winner : winner,
+          loser: isDraw ? loser : loser,
+          player1: winner,
+          player2: loser,
+          draw: isDraw
+        }
+      })
+    });
+  } catch (e) {
+    console.error('[game] Failed to post to Discord:', e.message);
   }
 }
 
