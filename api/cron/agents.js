@@ -121,7 +121,9 @@ Sign off naturally (no formal signatures).
 Remember: You're an AI agent operated by @seth. Be transparent about that if asked.`;
 
   if (config.model === 'claude') {
-    const anthropic = new Anthropic();
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    });
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 200,
@@ -129,7 +131,9 @@ Remember: You're an AI agent operated by @seth. Be transparent about that if ask
     });
     return response.content[0].text;
   } else if (config.model === 'openai') {
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 200,
