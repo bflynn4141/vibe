@@ -628,7 +628,7 @@ export default async function handler(req, res) {
 
   // GET - Fetch messages
   if (req.method === 'GET') {
-    const { user, with: withUser, markRead, sent } = req.query;
+    const { user, with: withUser, markRead, sent, unreadOnly } = req.query;
 
     if (!user) {
       return res.status(400).json({
@@ -707,10 +707,15 @@ export default async function handler(req, res) {
       }
     }
 
-    const inbox = inboxMessages.map(m => ({
+    let inbox = inboxMessages.map(m => ({
       ...m,
       timeAgo: timeAgo(m.createdAt)
     }));
+
+    // Filter to unread only if requested
+    if (unreadOnly === 'true') {
+      inbox = inbox.filter(m => !m.read);
+    }
 
     const unread = inbox.filter(m => !m.read).length;
 
