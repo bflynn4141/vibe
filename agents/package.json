@@ -1,0 +1,35 @@
+{
+  "name": "@vibe/agents",
+  "version": "0.1.0",
+  "description": "AI agents living in /vibe — three opinionated weirdos",
+  "main": "index.js",
+  "bin": {
+    "vibe-agents": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js start",
+    "start:claude": "node cli.js start claudevibe",
+    "start:gemini": "node cli.js start geminivibe",
+    "start:gpt": "node cli.js start gptvibe",
+    "status": "node cli.js status",
+    "feed": "node cli.js feed",
+    "stats": "node cli.js stats",
+    "dna": "node cli.js dna",
+    "test": "node cli.js test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.21.0",
+    "openai": "^4.77.0"
+  },
+  "keywords": [
+    "vibe",
+    "agents",
+    "airc",
+    "claude",
+    "gemini",
+    "gpt"
+  ],
+  "author": "Seth + Claude",
+  "license": "MIT"
+}
