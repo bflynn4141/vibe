@@ -97,7 +97,8 @@ async function markGreeted(agent, user) {
 async function getRecentUsers() {
   // Get users active in last hour
   const hourAgo = Date.now() - (60 * 60 * 1000);
-  const users = await kv.zrangebyscore('presence:active', hourAgo, '+inf');
+  // Use zrange with BYSCORE for Vercel KV
+  const users = await kv.zrange('presence:active', hourAgo, '+inf', { byScore: true });
   return users.filter(u => !Object.keys(AGENTS).includes(u) && u !== 'seth');
 }
 
