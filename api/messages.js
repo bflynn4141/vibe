@@ -116,10 +116,11 @@ function extractToken(req) {
 // Check if KV is configured via environment variables
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
-// Limits to prevent unbounded growth
-const INBOX_LIMIT = 1000;
-const OUTBOX_LIMIT = 1000;
-const THREAD_LIMIT = 500;
+// Limits - keeping everything for learning/analytics
+// Previously: 1000/1000/500, increased to retain all history
+const INBOX_LIMIT = 100000;
+const OUTBOX_LIMIT = 100000;
+const THREAD_LIMIT = 50000;
 
 // In-memory fallback (structured like KV for consistency)
 const memory = {

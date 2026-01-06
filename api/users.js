@@ -102,11 +102,11 @@ async function sendWelcomeDM(toUser) {
     const pipeline = kv.pipeline();
     pipeline.set(`msg:${id}`, message);
     pipeline.lpush(`inbox:${toUser}`, id);
-    pipeline.ltrim(`inbox:${toUser}`, 0, 999);
+    pipeline.ltrim(`inbox:${toUser}`, 0, 99999);  // Keep all for learning
     // Thread: alphabetical order
     const [a, b] = ['vibe', toUser].sort();
     pipeline.lpush(`thread:${a}:${b}`, id);
-    pipeline.ltrim(`thread:${a}:${b}`, 0, 499);
+    pipeline.ltrim(`thread:${a}:${b}`, 0, 49999);  // Keep all for learning
     await pipeline.exec();
   } else {
     // Memory fallback
