@@ -62,6 +62,7 @@
     { "source": "/api/cron/echo", "destination": "/api/cron/echo.js" },
     { "source": "/api/discord-bridge", "destination": "/api/discord-bridge.js" },
     { "source": "/api/social", "destination": "/api/social/index.js" },
-    { "source": "/api/cron/social-sync", "destination": "/api/cron/social-sync.js" }
+    { "source": "/api/cron/social-sync", "destination": "/api/cron/social-sync.js" },
+    { "source": "/api/register", "destination": "/api/register.js" }
   ]
 }
