@@ -10,6 +10,28 @@ const store = require('../store');
 const { createTicTacToePayload, formatPayload } = require('../protocol');
 const { requireInit, normalizeHandle } = require('./_shared');
 
+// Post game results to board
+async function postGameResult(winner, loser, isDraw) {
+  try {
+    const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+    const content = isDraw
+      ? `@${winner} and @${loser} tied at tic-tac-toe`
+      : `@${winner} beat @${loser} at tic-tac-toe`;
+
+    await fetch(`${API_URL}/api/board`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        author: 'echo',
+        content,
+        category: 'general'
+      })
+    });
+  } catch (e) {
+    console.error('[game] Failed to post result:', e.message);
+  }
+}
+
 const definition = {
   name: 'vibe_game',
   description: 'Start or continue a game with someone. Currently supports: tictactoe',
@@ -186,8 +208,12 @@ Use \`vibe game @${them} --move 5\` to play center (positions 1-9)`
   let message = '';
   if (winner) {
     message = winner === mySymbol ? 'I win! 🎉' : 'Good game!';
+    // Post to board
+    postGameResult(myHandle, them, false);
   } else if (newBoard.every(c => c)) {
     message = 'Draw! 🤝';
+    // Post to board
+    postGameResult(myHandle, them, true);
   } else {
     message = `Played ${mySymbol} at position ${move}. Your turn!`;
   }

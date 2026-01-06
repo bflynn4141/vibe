@@ -132,6 +132,15 @@ async function getThread(them) {
   return request('GET', `/api/messages/thread?me=echo&them=${them}`);
 }
 
+async function postToBoard(content, category = 'general') {
+  console.log(`[echo] Board post: "${content.substring(0, 50)}..."`);
+  return request('POST', '/api/board', {
+    author: 'echo',
+    content,
+    category
+  });
+}
+
 // ============ CLAUDE API ============
 
 async function askClaude(prompt) {
@@ -171,6 +180,14 @@ Write a warm welcome message. Briefly explain what /vibe is (social layer for de
   const message = await askClaude(prompt);
   if (message) {
     await sendDM(user.handle, message);
+
+    // Auto-post to board
+    const building = user.one_liner || 'something cool';
+    await postToBoard(
+      `@${user.handle} just joined /vibe — building ${building}`,
+      'general'
+    );
+
     memory.users[user.handle] = {
       firstSeen: Date.now(),
       lastSeen: Date.now(),
@@ -197,6 +214,20 @@ Respond naturally as @echo, the /vibe party host. If they're asking about /vibe,
     await sendDM(from, message);
     memory.lastMessages = memory.lastMessages || {};
     memory.lastMessages[from] = now;
+  }
+}
+
+async function maybePostDailyDigest(memory, userCount, messageCount) {
+  const now = Date.now();
+  const lastDigest = memory.lastDigest || 0;
+  const hoursSinceDigest = (now - lastDigest) / (1000 * 60 * 60);
+
+  // Post digest once every 24 hours, but only if there was activity
+  if (hoursSinceDigest >= 24 && (userCount > 0 || messageCount > 0)) {
+    const digest = `Daily vibe check: ${Object.keys(memory.users || {}).length} total vibers, ${userCount} online now`;
+    await postToBoard(digest, 'general');
+    memory.lastDigest = now;
+    console.log('[echo] Posted daily digest');
   }
 }
 
@@ -250,6 +281,9 @@ async function echoLoop() {
       await respondToMessage(thread.handle, lastMsg.body, memory);
     }
   }
+
+  // Maybe post daily digest
+  await maybePostDailyDigest(memory, users.length, unread.length);
 
   // Save memory
   memory.lastRun = Date.now();
