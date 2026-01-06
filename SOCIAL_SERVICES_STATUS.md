@@ -2,6 +2,7 @@
 
 **Last Updated:** January 5, 2026
 **Status:** Phase 1a Complete, X Live
+**Last Successful Sync:** 2026-01-06T02:28:29Z (X: 20 messages)
 
 ---
 
@@ -83,6 +84,10 @@ social:msg:{id}           # Individual message data (30-day TTL)
 social:sync:{channel}     # Last sync state (lastMessageId, timestamp)
 ```
 
+**Storage Limits:**
+- Social inbox: 1,000 messages per channel (30-day TTL)
+- /vibe DMs: 100,000 messages (separate system, no TTL)
+
 ### 4. API Endpoints
 
 | Endpoint | Method | Description |
@@ -109,25 +114,42 @@ social:sync:{channel}     # Last sync state (lastMessageId, timestamp)
 | `/api/cron/echo` | Every 5 min | @echo party host agent |
 | `/api/cron/social-sync` | Every 5 min | Sync X + Farcaster to inbox |
 
+**Failure Handling:**
+- If sync fails: Logged to console, next cron retries in 5 min
+- No backoff currently implemented
+- Rate-limited channels: Skipped with reason logged, retried next cycle
+- TODO: Add alerting for consecutive failures (>3)
+
 ---
 
 ## What's Active
 
 ### X (Twitter) — ✅ LIVE
 
-**Configured:** Yes (credentials in Vercel)
+**Configured:** Yes
 **Syncing:** Every 5 minutes
-**Messages:** 20 synced (mentions + replies)
+**Last Sync:** 2026-01-06T02:28:29Z
+**Messages Synced:** 20
 
-**Capabilities:**
-- ✅ Read mentions
-- ✅ Read replies
-- ❌ Read DMs (requires elevated API access)
-- ❌ Write tweets (requires $100/mo Basic tier)
+**Endpoints Used:**
+- `GET /2/users/:id/mentions` — Tweets mentioning you
+- `GET /2/users/me` — User ID lookup
+
+**Endpoints NOT Used:**
+- Timeline (home feed)
+- Lists
+- DMs (requires elevated access)
+- Likes/bookmarks
+
+**Rate Limit Guardrails:**
+- Min 5 min between syncs (enforced by `MIN_SYNC_INTERVAL_MS`)
+- Max 20 tweets per sync (`max_results: 20`)
+- Free tier: 15 requests/15 min window
+- Cache prevents redundant fetches via `sinceId` pagination
 
 **Signal Scores:**
-- Reply: 80
-- Mention: 70
+- Reply: 80 (direct conversation)
+- Mention: 70 (tagged in tweet)
 
 **Environment Variables:**
 ```
@@ -144,9 +166,9 @@ X_ACCESS_SECRET   ✅ Set
 
 **Required Environment Variables:**
 ```
-NEYNAR_API_KEY        ❌ Missing (get from neynar.com)
-FARCASTER_FID         ❌ Missing (your Farcaster ID number)
-FARCASTER_SIGNER_UUID ❌ Missing (for write access)
+NEYNAR_API_KEY        ❌ Missing
+FARCASTER_FID         ❌ Missing
+FARCASTER_SIGNER_UUID ❌ Missing (for write)
 ```
 
 ### Discord — ✅ WRITE ONLY
@@ -164,12 +186,14 @@ FARCASTER_SIGNER_UUID ❌ Missing (for write access)
 
 ## Performance
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Inbox read latency | <50ms | ~30ms (from KV) |
-| Sync frequency | 5 min | 5 min |
-| Messages retained | 1000 | 1000 (30-day TTL) |
-| Rate limit buffer | 5 min cache | 5 min |
+| Metric | Target | Actual | Notes |
+|--------|--------|--------|-------|
+| Inbox read latency | <50ms | ~30ms | From Vercel KV |
+| Sync frequency | 5 min | 5 min | Vercel cron |
+| Messages per channel | 1,000 | 1,000 | Sorted set limit |
+| Message TTL | 30 days | 30 days | Auto-expire via KV |
+| Rate limit buffer | 5 min | 5 min | Min sync interval |
+| Cache hit rate | 100% reads | 100% | Sync-then-read pattern |
 
 ---
 
@@ -179,20 +203,27 @@ FARCASTER_SIGNER_UUID ❌ Missing (for write access)
 
 **Goal:** Post to X and Farcaster from terminal
 
+**API Limits (Know Before You Go):**
+
+| Platform | Free Tier | Paid Tier | Write Requires |
+|----------|-----------|-----------|----------------|
+| X | 15 reads/15min, 0 writes | $100/mo Basic: 1,500 tweets/mo | Basic tier |
+| Farcaster (Neynar) | 1,000 reads/day, 100 writes/day | $50/mo: 10K reads, 1K writes | Free works |
+
 **Blockers:**
-1. **X Write** — Requires upgrading to X API Basic tier ($100/month)
-   - Current tier: Free (read-only)
-   - Needed: Basic tier (1,500 tweets/month)
+1. **X Write** — Requires $100/month Basic tier
+   - Current: Free tier (read-only, 15 req/15min)
+   - Needed: Basic tier (1,500 tweets/month, full write access)
 
 2. **Farcaster** — Requires Neynar credentials
-   - Sign up at neynar.com (free tier available)
-   - Create a signer for write access
+   - Sign up: neynar.com (free tier: 1K reads + 100 writes/day)
+   - Signer: Required for posting (one-time setup via Neynar dashboard)
 
 **Tasks:**
-- [ ] Upgrade X API to Basic tier
-- [ ] Get Neynar API key
-- [ ] Get Farcaster FID
-- [ ] Create Farcaster signer
+- [ ] Upgrade X API to Basic tier ($100/mo)
+- [ ] Get Neynar API key (free)
+- [ ] Get Farcaster FID (your user ID number)
+- [ ] Create Farcaster signer (Neynar dashboard)
 - [ ] Add credentials to Vercel
 - [ ] Test `vibe social-post "hello" --x --farcaster`
 
@@ -204,23 +235,27 @@ FARCASTER_SIGNER_UUID ❌ Missing (for write access)
 
 **Goal:** WhatsApp and Telegram in unified inbox
 
-**Architecture Decision:** Sidecar required
+**Architecture Decision:** `vibe-sidecar` required
 
 WhatsApp (whatsapp-web.js) and Discord Gateway need persistent processes.
-Vercel serverless times out after 60s.
+Vercel serverless times out after 60s. Solution: separate always-on service.
 
-**Options:**
-1. **Local sidecar** — Run on Seth's machine (free, fragile)
-2. **Fly.io sidecar** — Always-on Docker ($5/mo)
-3. **Defer** — Skip until Phase 3
+**`vibe-sidecar` Options:**
+| Option | Cost | Reliability | Recommendation |
+|--------|------|-------------|----------------|
+| Local (Seth's machine) | Free | Fragile (offline when away) | Dev only |
+| Fly.io Docker | $5/mo | Always-on | **Production choice** |
+| Railway/Render | $5-7/mo | Always-on | Alternative |
 
-**Telegram Tasks:**
+**Decision:** Phase 2 will use local sidecar for development. Phase 3 deploys to Fly.io.
+
+**Telegram Tasks:** (Vercel-compatible, no sidecar needed)
 - [ ] Create Telegram bot via @BotFather
 - [ ] Implement webhook receiver
 - [ ] Add Telegram adapter
 - [ ] Test sync and reply
 
-**WhatsApp Tasks:**
+**WhatsApp Tasks:** (requires `vibe-sidecar`)
 - [ ] Set up local whatsapp-web.js bridge
 - [ ] Implement QR auth flow
 - [ ] Session persistence strategy
@@ -234,11 +269,14 @@ Vercel serverless times out after 60s.
 
 **Goal:** Two-way Discord + cross-channel identity linking
 
-**Discord Gateway:**
-- Deploy sidecar to Fly.io
-- Implement Discord.js bot
-- Sync channel messages to inbox
-- Reply from terminal
+**Discord Gateway Decision:**
+> Discord read will run on Fly.io via `vibe-sidecar` (always-on, $5/mo).
+
+**`vibe-sidecar` Responsibilities:**
+- Discord.js bot (Gateway connection)
+- WhatsApp session (whatsapp-web.js)
+- Pushes events to `/api/social/ingest` endpoint
+- Health check endpoint for monitoring
 
 **UnifiedContact System:**
 ```typescript
@@ -285,12 +323,22 @@ vibe link @seth_x @seth_discord @seth.eth --name "Seth"
 **Goal:** Agent bridge, attention mode, analytics
 
 **Features:**
-- `vibe agent-bridge` — Expose inbox to Solienne/Eden agents
-- Attention mode — Mute low-signal channels temporarily
-- Context packs — Origin, thread depth, reply suggestions
-- Scheduled posts
-- Analytics dashboard
-- Circuit breaker for channel failures
+
+1. **`vibe agent-bridge`** — Expose inbox to Solienne/Eden agents
+   - **Privacy scope:** Summary only by default (unread counts, channel status)
+   - **Elevated scope:** Message content requires explicit user approval
+   - **Allowed agents:** Configurable allowlist (e.g., `solienne`, `eden`)
+   - **Excluded fields:** Never expose `raw` payload or auth tokens
+
+2. **Attention mode** — Mute low-signal channels temporarily
+
+3. **Context packs** — Origin, thread depth, reply suggestions
+
+4. **Scheduled posts** — Queue posts for later
+
+5. **Analytics dashboard** — Engagement tracking
+
+6. **Circuit breaker** — Graceful degradation when channels fail
 
 **Deliverable:** Production-ready social command center
 
@@ -300,49 +348,57 @@ vibe link @seth_x @seth_discord @seth.eth --name "Seth"
 
 ### Currently Set (Production)
 
-```bash
-# X (Twitter) - ✅ Active
-X_API_KEY=dpmPQj53vh7zenGceNCAU5Y5j
-X_API_SECRET=j4cRn...
-X_ACCESS_TOKEN=3520-IwPt3o...
-X_ACCESS_SECRET=aWPnJ0k9d...
-
-# Discord - ✅ Active (webhook only)
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-
-# KV - ✅ Active
-KV_REST_API_URL=...
-KV_REST_API_TOKEN=...
-```
+| Variable | Status | Purpose |
+|----------|--------|---------|
+| `X_API_KEY` | ✅ Set | Twitter OAuth consumer key |
+| `X_API_SECRET` | ✅ Set | Twitter OAuth consumer secret |
+| `X_ACCESS_TOKEN` | ✅ Set | Twitter OAuth access token |
+| `X_ACCESS_SECRET` | ✅ Set | Twitter OAuth access secret |
+| `DISCORD_WEBHOOK_URL` | ✅ Set | Discord outbound posts |
+| `KV_REST_API_URL` | ✅ Set | Vercel KV endpoint |
+| `KV_REST_API_TOKEN` | ✅ Set | Vercel KV auth |
 
 ### Needed for Phase 1b
 
-```bash
-# Farcaster (Neynar)
-NEYNAR_API_KEY=           # From neynar.com
-FARCASTER_FID=            # Your Farcaster ID (e.g., 1234)
-FARCASTER_SIGNER_UUID=    # For posting (create via Neynar)
-```
+| Variable | Source |
+|----------|--------|
+| `NEYNAR_API_KEY` | neynar.com dashboard |
+| `FARCASTER_FID` | Your Farcaster profile |
+| `FARCASTER_SIGNER_UUID` | Neynar signer creation |
 
 ### Needed for Phase 2+
 
-```bash
-# Telegram
-TELEGRAM_BOT_TOKEN=       # From @BotFather
+| Variable | Source |
+|----------|--------|
+| `TELEGRAM_BOT_TOKEN` | @BotFather on Telegram |
+| `WHATSAPP_SESSION_PATH` | Local filesystem (sidecar) |
+| `GMAIL_CLIENT_ID` | Google Cloud Console |
+| `GMAIL_CLIENT_SECRET` | Google Cloud Console |
+| `GMAIL_REFRESH_TOKEN` | OAuth flow |
+| `LINKEDIN_ACCESS_TOKEN` | LinkedIn Developer Portal |
 
-# WhatsApp (sidecar config)
-WHATSAPP_SESSION_PATH=    # Local session storage
+---
 
-# Email
-GMAIL_CLIENT_ID=
-GMAIL_CLIENT_SECRET=
-GMAIL_REFRESH_TOKEN=
+## Operational Notes
 
-# LinkedIn
-LINKEDIN_CLIENT_ID=
-LINKEDIN_CLIENT_SECRET=
-LINKEDIN_ACCESS_TOKEN=
-```
+### Failure Modes
+
+| Scenario | Current Behavior | TODO |
+|----------|------------------|------|
+| Sync fails once | Log error, retry next cron (5 min) | — |
+| Sync fails 3x consecutive | Same as above | Add Slack/Discord alert |
+| Channel rate limited | Skip channel, log reason | — |
+| KV unavailable | Fall back to memory (ephemeral) | Add health check |
+| Vercel cron missed | No sync until next trigger | Add manual trigger button |
+
+### Rate Limit Strategy
+
+| Channel | Budget | Enforcement |
+|---------|--------|-------------|
+| X (Free) | 15 req/15min | 5-min min interval, sinceId pagination |
+| X (Basic) | ~50 req/15min | Same, with write budget tracking |
+| Farcaster | 1K reads/day | 5-min interval sufficient |
+| Discord | 50 req/sec | Not a concern for current volume |
 
 ---
 
@@ -398,6 +454,23 @@ curl -sL -X POST "https://slashvibe.dev/api/social" \
 | Posts from terminal | 0% | 25% | 50%+ |
 | Identity links | 0 | 0 | 20+ |
 | Daily inbox checks | TBD | 5+ | 10+ |
+
+---
+
+## Architect Review Notes (Jan 5, 2026)
+
+Feedback incorporated:
+- ✅ Added API limits callout for Phase 1b
+- ✅ Clarified message retention (1K social vs 100K /vibe DMs)
+- ✅ Added cache TTL and storage limits in Performance
+- ✅ Specified X endpoints used vs excluded
+- ✅ Named sidecar service (`vibe-sidecar`)
+- ✅ Made Discord Gateway decision explicit (Fly.io)
+- ✅ Added privacy scope for agent bridge
+- ✅ Added failure mode table
+- ✅ Added rate limit guardrails
+- ✅ Added last successful sync timestamp
+- ✅ Masked secrets (status only, no values)
 
 ---
 
