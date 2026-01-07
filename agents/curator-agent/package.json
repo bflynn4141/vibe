@@ -1,0 +1,14 @@
+{
+  "name": "curator-agent",
+  "version": "1.0.0",
+  "description": "Cultural curator - surfaces great work, creates digests, spotlights ships",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "daemon": "node index.js daemon"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}
