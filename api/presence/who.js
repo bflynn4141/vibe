@@ -41,23 +41,28 @@ module.exports = async function handler(req, res) {
 
         // If no JSON data, try hash format (heartbeat API)
         if (!data) {
-          data = await kv.hgetall(`presence:${handle}`);
-          if (data) {
-            // Normalize hash format to JSON format
-            data = {
-              username: data.handle,
-              workingOn: data.one_liner,
-              lastSeen: new Date(parseInt(data.last_heartbeat)).toISOString(),
-              context: {
-                file: data.file,
-                branch: data.branch,
-                error: data.error,
-                note: data.note
-              },
-              mood: data.mood,
-              mood_inferred: data.mood_inferred === 'true',
-              mood_reason: data.mood_reason
-            };
+          try {
+            const hashData = await kv.hgetall(`presence:${handle}`);
+            if (hashData && hashData.handle) {
+              // Normalize hash format to JSON format
+              data = {
+                username: hashData.handle,
+                workingOn: hashData.one_liner || '',
+                lastSeen: hashData.last_heartbeat ? new Date(parseInt(hashData.last_heartbeat)).toISOString() : new Date().toISOString(),
+                context: {
+                  file: hashData.file || null,
+                  branch: hashData.branch || null,
+                  error: hashData.error || null,
+                  note: hashData.note || null
+                },
+                mood: hashData.mood || null,
+                mood_inferred: hashData.mood_inferred === 'true',
+                mood_reason: hashData.mood_reason || null
+              };
+            }
+          } catch (e) {
+            // Hash lookup failed, skip this handle
+            console.log(`Hash lookup failed for ${handle}:`, e.message);
           }
         }
 
