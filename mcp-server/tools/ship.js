@@ -14,6 +14,8 @@ const config = require('../config');
 const userProfiles = require('../store/profiles');
 const { requireInit, formatTimeAgo } = require('./_shared');
 
+const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+
 const definition = {
   name: 'vibe_ship',
   description: 'Announce something you just shipped to the community board and update your profile.',
@@ -38,14 +40,13 @@ async function handler(args) {
   }
 
   const myHandle = config.getHandle();
-  const apiUrl = config.getApiUrl();
 
   try {
     // Record in profile
     await userProfiles.recordShip(myHandle, args.what);
-    
+
     // Post to board
-    const response = await fetch(`${apiUrl}/api/board`, {
+    const response = await fetch(`${API_URL}/api/board`, {
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

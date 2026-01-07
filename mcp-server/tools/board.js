@@ -9,6 +9,8 @@
 const config = require('../config');
 const { requireInit, header, emptyState, formatTimeAgo, divider } = require('./_shared');
 
+const API_URL = process.env.VIBE_API_URL || 'https://slashvibe.dev';
+
 const definition = {
   name: 'vibe_board',
   description: 'Shared whiteboard for use cases, ideas, and things people have shipped. Read the board or add your own entry.',
@@ -49,7 +51,6 @@ async function handler(args) {
   const initCheck = requireInit();
   if (initCheck) return initCheck;
 
-  const apiUrl = config.getApiUrl();
   const myHandle = config.getHandle();
 
   // If content provided, add entry
@@ -59,7 +60,7 @@ async function handler(args) {
     }
 
     try {
-      const response = await fetch(`${apiUrl}/api/board`, {
+      const response = await fetch(`${API_URL}/api/board`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,7 +91,7 @@ async function handler(args) {
     const limit = Math.min(args.limit || 10, 50);
     const filter = args.filter && args.filter !== 'all' ? args.filter : null;
 
-    let url = `${apiUrl}/api/board?limit=${limit}`;
+    let url = `${API_URL}/api/board?limit=${limit}`;
     if (filter) url += `&category=${filter}`;
 
     const response = await fetch(url);
