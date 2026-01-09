@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Terminal from "./components/Terminal";
 import SessionsDrawer from "./components/SessionsDrawer";
+import SocialSidebar from "./components/SocialSidebar";
 
 function App() {
   const [isSessionsDrawerOpen, setIsSessionsDrawerOpen] = useState(false);
@@ -14,7 +15,7 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+Shift+S (Mac) or Ctrl+Shift+S (Windows/Linux)
+      // Cmd+Shift+S (Mac) or Ctrl+Shift+S (Windows/Linux) - Sessions
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "S" || e.key === "s")) {
         e.preventDefault();
         setIsSessionsDrawerOpen((prev) => !prev);
@@ -36,25 +37,8 @@ function App() {
         <Terminal ref={terminalRef} />
       </div>
 
-      {/* Social Sidebar (20%) - placeholder for now */}
-      <div
-        style={{
-          width: "300px",
-          background: "#0a0a0a",
-          borderLeft: "1px solid #222",
-          padding: "16px",
-        }}
-      >
-        <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-          Social
-        </h3>
-        <p style={{ fontSize: "12px", color: "#666" }}>
-          Presence, messages, and games coming soon...
-        </p>
-        <p style={{ fontSize: "11px", color: "#444", marginTop: "16px" }}>
-          Press Cmd+Shift+S to view sessions
-        </p>
-      </div>
+      {/* Social Sidebar - /vibe network */}
+      <SocialSidebar />
 
       {/* Sessions Drawer */}
       <SessionsDrawer
