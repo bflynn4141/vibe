@@ -181,7 +181,7 @@ export const track = {
       sessionId,
       "command_run",
       command,
-      null,
+      undefined,
       exitCode === 0 ? "success" : "error",
       { exit_code: exitCode }
     ),
@@ -191,7 +191,7 @@ export const track = {
       sessionId,
       `${flowName}_abandoned`,
       reason || "User abandoned flow",
-      null,
+      undefined,
       "abandoned"
     ),
 
@@ -200,7 +200,7 @@ export const track = {
       sessionId,
       action,
       reason,
-      null,
+      undefined,
       "friction"
     ),
 };

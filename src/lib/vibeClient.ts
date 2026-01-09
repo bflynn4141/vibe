@@ -395,7 +395,6 @@ class VibeClient {
       return null;
     }
   }
-}
 
   // Live session sharing
   async getLiveSessions(): Promise<LiveSession[]> {
