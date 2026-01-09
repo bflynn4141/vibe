@@ -2,14 +2,18 @@
 
 **Terminal with presence, sessions, and agents.**
 
-## Week 1 Foundation
+## Week 1 Foundation ✅ COMPLETE
 
-This is the Week 1 MVP:
+**Status: Working and verified** (Jan 8, 2026)
+
 - ✅ Real PTY terminal (zsh/bash)
-- ✅ xterm.js frontend
+- ✅ xterm.js frontend with Spirit blue theme
 - ✅ Session recording to SQLite (~/.vibecodings/sessions.db)
-- ✅ Command/output logging
-- 🚧 Session replay (coming next)
+- ✅ Command/output logging with timestamps
+- ✅ Terminal resize handling
+- 🚧 Session replay UI (next)
+- 🚧 Shell integration markers (next)
+- 🚧 Export session JSON (next)
 
 ## Prerequisites
 
@@ -31,6 +35,8 @@ The terminal window will open. You now have:
 - A real shell (zsh on Mac)
 - Every command + output is recorded to SQLite
 - Sessions stored in `~/.vibecodings/sessions.db`
+
+**To verify it's working, see [VERIFY.md](./VERIFY.md)**
 
 ## Project Structure
 
