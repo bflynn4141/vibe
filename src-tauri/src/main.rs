@@ -26,7 +26,7 @@ fn start_session(
         .to_string();
 
     let shell = if cfg!(target_os = "macos") {
-        "/bin/zsh"
+        "/bin/zsh".to_string()
     } else {
         std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string())
     };

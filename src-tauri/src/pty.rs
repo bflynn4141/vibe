@@ -30,7 +30,7 @@ impl PtySession {
 
         // Get shell (zsh on Mac, bash fallback)
         let shell = if cfg!(target_os = "macos") {
-            "/bin/zsh"
+            "/bin/zsh".to_string()
         } else {
             std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string())
         };
@@ -39,7 +39,7 @@ impl PtySession {
         let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
 
         // Spawn shell
-        let mut cmd = CommandBuilder::new(shell);
+        let mut cmd = CommandBuilder::new(&shell);
         cmd.cwd(cwd);
 
         // TODO: Add ZDOTDIR for shell integration markers

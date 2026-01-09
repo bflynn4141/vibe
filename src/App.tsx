@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Terminal from "./components/Terminal";
 
 function App() {
