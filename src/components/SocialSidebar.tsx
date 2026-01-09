@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { vibeClient, type VibeUser } from "../lib/vibeClient";
 
-export default function SocialSidebar() {
+interface SocialSidebarProps {
+  onUserClick: (handle: string) => void;
+}
+
+export default function SocialSidebar({ onUserClick }: SocialSidebarProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<VibeUser[]>([]);
   const [handle, setHandle] = useState("");
@@ -161,6 +165,7 @@ export default function SocialSidebar() {
           onlineUsers.map((user) => (
             <div
               key={user.handle}
+              onClick={() => onUserClick(user.handle)}
               style={{
                 padding: "8px",
                 marginBottom: "4px",

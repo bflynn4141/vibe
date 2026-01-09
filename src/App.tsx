@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import Terminal from "./components/Terminal";
 import SessionsDrawer from "./components/SessionsDrawer";
 import SocialSidebar from "./components/SocialSidebar";
+import DMPanel from "./components/DMPanel";
 
 function App() {
   const [isSessionsDrawerOpen, setIsSessionsDrawerOpen] = useState(false);
+  const [activeDM, setActiveDM] = useState<string | null>(null);
   const terminalRef = useRef<any>(null);
 
   const handleReplaySession = (sessionId: string, speed: "instant" | "2x" | "realtime", fromTimestamp?: number) => {
@@ -21,14 +23,15 @@ function App() {
         setIsSessionsDrawerOpen((prev) => !prev);
       }
       // Escape to close
-      if (e.key === "Escape" && isSessionsDrawerOpen) {
-        setIsSessionsDrawerOpen(false);
+      if (e.key === "Escape") {
+        if (activeDM) setActiveDM(null);
+        else if (isSessionsDrawerOpen) setIsSessionsDrawerOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSessionsDrawerOpen]);
+  }, [isSessionsDrawerOpen, activeDM]);
 
   return (
     <div style={{ width: "100%", height: "100vh", display: "flex" }}>
@@ -38,7 +41,7 @@ function App() {
       </div>
 
       {/* Social Sidebar - /vibe network */}
-      <SocialSidebar />
+      <SocialSidebar onUserClick={(handle) => setActiveDM(handle)} />
 
       {/* Sessions Drawer */}
       <SessionsDrawer
@@ -46,6 +49,14 @@ function App() {
         onClose={() => setIsSessionsDrawerOpen(false)}
         onReplaySession={handleReplaySession}
       />
+
+      {/* DM Panel */}
+      {activeDM && (
+        <DMPanel
+          recipient={activeDM}
+          onClose={() => setActiveDM(null)}
+        />
+      )}
     </div>
   );
 }

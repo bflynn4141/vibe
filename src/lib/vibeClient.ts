@@ -79,6 +79,12 @@ class VibeClient {
   async sendMessage(to: string, content: string): Promise<boolean> {
     if (!this.handle) return false;
 
+    if (USE_MOCK) {
+      // Mock mode - always succeed
+      console.log("[MOCK] Sent message to", to, ":", content);
+      return true;
+    }
+
     try {
       const response = await fetch(`${VIBE_API_URL}/messages/send`, {
         method: "POST",
@@ -99,6 +105,11 @@ class VibeClient {
 
   async getMessages(): Promise<VibeMessage[]> {
     if (!this.handle) return [];
+
+    if (USE_MOCK) {
+      // Return mock messages (empty for now - messages will be added optimistically)
+      return [];
+    }
 
     try {
       const response = await fetch(`${VIBE_API_URL}/messages/inbox?handle=${this.handle}`);
