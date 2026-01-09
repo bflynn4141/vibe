@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::Utc;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use uuid::Uuid;
@@ -212,14 +212,25 @@ impl Database {
     pub fn end_command(&self, session_id: &str, exit_code: i32) -> Result<()> {
         let ended_at = Utc::now().timestamp_millis();
 
-        // Find the most recent command for this session without an end time
-        self.conn.execute(
-            "UPDATE commands
-             SET ended_at = ?1, exit_code = ?2
-             WHERE session_id = ?3 AND ended_at IS NULL
-             ORDER BY started_at DESC LIMIT 1",
-            params![ended_at, exit_code, session_id],
-        )?;
+        // Find the most recent unfinished command
+        let command_id: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT id FROM commands
+                 WHERE session_id = ?1 AND ended_at IS NULL
+                 ORDER BY started_at DESC LIMIT 1",
+                params![session_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+
+        // Update that command if found
+        if let Some(id) = command_id {
+            self.conn.execute(
+                "UPDATE commands SET ended_at = ?1, exit_code = ?2 WHERE id = ?3",
+                params![ended_at, exit_code, &id],
+            )?;
+        }
 
         Ok(())
     }

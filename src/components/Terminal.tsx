@@ -110,6 +110,7 @@ export default function Terminal() {
     if (!isReady || !xtermRef.current) return;
 
     const pollInterval = setInterval(() => {
+      // Read terminal output
       invoke<number[] | null>("read_output")
         .then((output) => {
           if (output && xtermRef.current) {
@@ -119,6 +120,9 @@ export default function Terminal() {
           }
         })
         .catch(console.error);
+
+      // Process OSC events for command tracking
+      invoke("process_osc_events").catch(console.error);
     }, 10); // Poll every 10ms for low latency
 
     return () => clearInterval(pollInterval);
