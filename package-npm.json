@@ -1,0 +1,48 @@
+{
+  "name": "@brightseth/vibe",
+  "version": "0.3.0",
+  "description": "Social layer for Claude Code - DMs, presence, artifacts, and collaborative intelligence",
+  "main": "mcp-server/index.js",
+  "bin": {
+    "vibe": "bin/vibe.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "claude-code",
+    "social",
+    "collaboration",
+    "ai",
+    "artifacts",
+    "messaging",
+    "presence"
+  ],
+  "author": "Seth Goldstein <seth@vibe.fyi>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brightseth/vibe-platform.git"
+  },
+  "homepage": "https://slashvibe.dev",
+  "bugs": {
+    "url": "https://github.com/brightseth/vibe-platform/issues"
+  },
+  "files": [
+    "mcp-server/**/*",
+    "bin/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "node mcp-server/post-install.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "@vercel/kv": "^3.0.0"
+  },
+  "peerDependencies": {},
+  "devDependencies": {}
+}

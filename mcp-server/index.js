@@ -420,6 +420,23 @@ class VibeMCPServer {
     process.stderr.write('vibe init → set identity\n');
     process.stderr.write('vibe who  → see who\'s around\n');
     process.stderr.write('vibe dm   → send a message\n\n');
+
+    // Check for updates (non-blocking)
+    this.checkForUpdates();
+  }
+
+  async checkForUpdates() {
+    try {
+      const { checkForUpdates, formatUpdateNotification } = await import('./auto-update.js');
+      const update = await checkForUpdates();
+
+      if (update) {
+        const notification = formatUpdateNotification(update);
+        process.stderr.write(notification);
+      }
+    } catch (error) {
+      // Silent fail - don't block startup
+    }
   }
 }
 
