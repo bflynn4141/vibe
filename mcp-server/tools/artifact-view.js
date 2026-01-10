@@ -8,6 +8,36 @@ const config = require('../config');
 const store = require('../store');
 const { requireInit } = require('./_shared');
 
+/**
+ * Helper function to get artifact by slug (for use in other tools)
+ * @param {string} slug - Artifact slug
+ * @returns {Promise<Object|null>} - Artifact object or null if not found
+ */
+async function getArtifactBySlug(slug) {
+  try {
+    // Try to get artifact from store
+    const result = await store.getArtifact(slug);
+    if (result.success && result.artifact) {
+      return result.artifact;
+    }
+
+    // Fallback: search through network artifacts
+    const myHandle = config.getHandle();
+    const artifacts = await store.getArtifacts('network', myHandle, 50);
+    if (artifacts.success && artifacts.artifacts) {
+      const found = artifacts.artifacts.find(a => a.slug === slug);
+      if (found) {
+        return found;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching artifact:', error);
+    return null;
+  }
+}
+
 const definition = {
   name: 'vibe_view_artifact',
   description: 'View a specific artifact or list artifacts (mine, for-me, network)',
@@ -141,4 +171,4 @@ async function handler(args) {
   };
 }
 
-module.exports = { definition, handler };
+module.exports = { definition, handler, getArtifactBySlug };

@@ -13,7 +13,7 @@ const { actions, formatActions } = require('./_actions');
 
 const definition = {
   name: 'vibe_dm',
-  description: 'Send a direct message to someone. Can include structured payload for games, handoffs, etc.',
+  description: 'Send a direct message to someone. Can include structured payload for games, handoffs, or artifact cards.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -24,6 +24,10 @@ const definition = {
       message: {
         type: 'string',
         description: 'Your message'
+      },
+      artifact_slug: {
+        type: 'string',
+        description: 'Optional artifact slug to share (e.g., "pizza-guide-abc123"). The artifact will be shown as a rich card.'
       },
       payload: {
         type: 'object',
@@ -38,7 +42,7 @@ async function handler(args) {
   const initCheck = requireInit();
   if (initCheck) return initCheck;
 
-  const { handle, message, payload } = args;
+  const { handle, message, artifact_slug, payload } = args;
   const myHandle = config.getHandle();
   const them = normalizeHandle(handle);
 
@@ -52,9 +56,30 @@ async function handler(args) {
     return { display: 'You can\'t DM yourself.' };
   }
 
+  // Handle artifact sharing
+  let finalPayload = payload;
+  if (artifact_slug) {
+    try {
+      // Fetch artifact from API
+      const { getArtifactBySlug } = require('./artifact-view');
+      const artifact = await getArtifactBySlug(artifact_slug);
+
+      if (!artifact) {
+        return { display: `Artifact not found: ${artifact_slug}` };
+      }
+
+      // Create artifact payload
+      const protocol = require('../protocol');
+      finalPayload = protocol.createArtifactPayload(artifact);
+    } catch (error) {
+      console.error('Failed to load artifact:', error);
+      return { display: `Failed to load artifact: ${error.message}` };
+    }
+  }
+
   // Need either message or payload
-  if ((!message || message.trim().length === 0) && !payload) {
-    return { display: 'Need either a message or payload.' };
+  if ((!message || message.trim().length === 0) && !finalPayload) {
+    return { display: 'Need either a message, artifact, or payload.' };
   }
 
   const trimmed = message ? message.trim() : '';
@@ -62,7 +87,7 @@ async function handler(args) {
   const wasTruncated = trimmed.length > MAX_LENGTH;
   const finalMessage = wasTruncated ? trimmed.substring(0, MAX_LENGTH) : trimmed;
 
-  await store.sendMessage(myHandle, them, finalMessage || null, 'dm', payload);
+  await store.sendMessage(myHandle, them, finalMessage || null, 'dm', finalPayload);
 
   // Log social pattern (quietly, in background)
   patterns.logMessageSent(them);
@@ -93,9 +118,14 @@ async function handler(args) {
   if (finalMessage) {
     display += `\n\n"${truncate(finalMessage, 100)}"`;
   }
-  if (payload) {
-    const payloadType = payload.type || 'data';
-    display += `\n\n📦 _Includes ${payloadType} payload_`;
+  if (finalPayload) {
+    const payloadType = finalPayload.type || 'data';
+    if (payloadType === 'artifact') {
+      const icon = finalPayload.template === 'guide' ? '📘' : finalPayload.template === 'learning' ? '💡' : finalPayload.template === 'workspace' ? '🗂️' : '📦';
+      display += `\n\n${icon} _Shared artifact: ${finalPayload.title}_`;
+    } else {
+      display += `\n\n📦 _Includes ${payloadType} payload_`;
+    }
   }
 
   // Burst notification (5+ messages in one thread)

@@ -101,10 +101,49 @@ const ACK_SCHEMA = {
   }
 };
 
+/**
+ * Artifact schema — For sharing artifacts in messages
+ *
+ * Example:
+ * {
+ *   type: 'artifact',
+ *   version: '0.1.0',
+ *   artifactId: 'artifact_1768035804429_1651c037',
+ *   slug: 'pizza-guide-abc123',
+ *   title: 'Stan's North Beach Pizza Guide',
+ *   template: 'guide',
+ *   preview: 'Best pizza spots in North Beach...',
+ *   url: 'https://slashvibe.dev/a/pizza-guide-abc123'
+ * }
+ */
+const ARTIFACT_SCHEMA = {
+  type: 'artifact',
+  required: ['artifactId', 'slug', 'title', 'template', 'url'],
+  validate: (payload) => {
+    if (!payload.artifactId || typeof payload.artifactId !== 'string') {
+      return { valid: false, error: 'Missing or invalid artifactId' };
+    }
+    if (!payload.slug || typeof payload.slug !== 'string') {
+      return { valid: false, error: 'Missing or invalid slug' };
+    }
+    if (!payload.title || typeof payload.title !== 'string') {
+      return { valid: false, error: 'Missing or invalid title' };
+    }
+    if (!['guide', 'learning', 'workspace'].includes(payload.template)) {
+      return { valid: false, error: 'Invalid template (must be: guide, learning, workspace)' };
+    }
+    if (!payload.url || typeof payload.url !== 'string') {
+      return { valid: false, error: 'Missing or invalid url' };
+    }
+    return { valid: true };
+  }
+};
+
 const SCHEMAS = {
   game: GAME_SCHEMA,
   handoff: HANDOFF_SCHEMA,
-  ack: ACK_SCHEMA
+  ack: ACK_SCHEMA,
+  artifact: ARTIFACT_SCHEMA
 };
 
 // ============ PROTOCOL FUNCTIONS ============
@@ -266,6 +305,8 @@ function formatPayload(payload) {
       return formatHandoffPayload(payload);
     case 'ack':
       return formatAckPayload(payload);
+    case 'artifact':
+      return formatArtifactPayload(payload);
     default:
       return `📦 _${payload.type} payload_`;
   }
@@ -316,6 +357,49 @@ function formatAckPayload(payload) {
   return `${icon} Acknowledged: ${payload.replyTo} (${status})`;
 }
 
+function formatArtifactPayload(payload) {
+  const template = payload.template || 'artifact';
+  const templateIcon = template === 'guide' ? '📘' : template === 'learning' ? '💡' : template === 'workspace' ? '🗂️' : '📦';
+
+  let display = `${templateIcon} **${payload.title}**\n`;
+
+  if (payload.preview) {
+    const preview = payload.preview.length > 120 ? payload.preview.substring(0, 120) + '...' : payload.preview;
+    display += `> ${preview}\n\n`;
+  }
+
+  display += `🔗 [View artifact](${payload.url})`;
+
+  return display;
+}
+
+// ============ ARTIFACT HELPERS ============
+
+/**
+ * Create an artifact card payload
+ * @param {Object} artifact - Artifact object from API
+ * @returns {Object} - Artifact payload
+ */
+function createArtifactPayload(artifact) {
+  // Extract preview from first paragraph block
+  let preview = '';
+  if (artifact.content && artifact.content.blocks) {
+    const firstPara = artifact.content.blocks.find(b => b.type === 'paragraph');
+    if (firstPara && firstPara.markdown) {
+      preview = firstPara.markdown.substring(0, 150);
+    }
+  }
+
+  return createPayload('artifact', {
+    artifactId: artifact.id,
+    slug: artifact.slug,
+    title: artifact.title,
+    template: artifact.template,
+    preview: preview || undefined,
+    url: `https://slashvibe.dev/a/${artifact.slug}`
+  });
+}
+
 module.exports = {
   PROTOCOL_VERSION,
 
@@ -334,6 +418,9 @@ module.exports = {
 
   // Ack helpers
   createAckPayload,
+
+  // Artifact helpers
+  createArtifactPayload,
 
   // Schemas (for extension)
   SCHEMAS
