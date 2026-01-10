@@ -1,0 +1,114 @@
+{
+  "title": "Stan's North Beach Pizza Strategy",
+  "template": "guide",
+  "content": {
+    "blocks": [
+      {
+        "type": "heading",
+        "text": "The Perfect North Beach Pizza Pilgrimage",
+        "level": 1
+      },
+      {
+        "type": "paragraph",
+        "markdown": "Since you're staying in North Beach for your **March 2026** visit, I filtered out the Mission spots we usually go to. This is your neighborhood pizza guide."
+      },
+      {
+        "type": "heading",
+        "text": "Top Picks",
+        "level": 2
+      },
+      {
+        "type": "places",
+        "items": [
+          {
+            "name": "Tony's Pizza Napoletana",
+            "neighborhood": "North Beach",
+            "why": "Multiple pizza styles, James Beard award-winning. The coal-fired Margherita is insane. Get there at 4:30pm to avoid the 2-hour line.",
+            "link": "https://tonyspizzanapoletana.com"
+          },
+          {
+            "name": "Golden Boy Pizza",
+            "neighborhood": "North Beach",
+            "why": "Thick Sicilian slices. Cash only. The square pepperoni is legendary. Go at 2pm (off-peak) or 11pm (late night).",
+            "link": null
+          },
+          {
+            "name": "Pizzeria Delfina",
+            "neighborhood": "Pacific Heights / Mission",
+            "why": "Neapolitan-style, wood-fired. The clam pizza is wild. Easier to get into than Tony's.",
+            "link": "https://pizzeriadelfina.com"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "text": "Suggested Itinerary",
+        "level": 2
+      },
+      {
+        "type": "schedule",
+        "items": [
+          {
+            "time": "Day 1 - 4:30pm",
+            "event": "Tony's Pizza (arrive early to skip line)"
+          },
+          {
+            "time": "Day 2 - 2:00pm",
+            "event": "Golden Boy (off-peak, grab a square slice)"
+          },
+          {
+            "time": "Day 3 - 7:00pm",
+            "event": "Pizzeria Delfina (try the clam pizza)"
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "style": "info",
+        "text": "Pro tip: Tony's takes reservations for parties of 6+. If you're solo, go right when they open at 4:30pm."
+      },
+      {
+        "type": "heading",
+        "text": "Action Checklist",
+        "level": 2
+      },
+      {
+        "type": "checklist",
+        "items": [
+          {
+            "text": "Book Tony's if you have 6+ people",
+            "checked": false
+          },
+          {
+            "text": "Bring cash for Golden Boy",
+            "checked": false
+          },
+          {
+            "text": "Try the clam pizza at Delfina",
+            "checked": false
+          },
+          {
+            "text": "Report back which one was best",
+            "checked": false
+          }
+        ]
+      },
+      {
+        "type": "attribution",
+        "from": "seth",
+        "to": "wanderingstan",
+        "context": "From our conversation about your March SF visit"
+      }
+    ]
+  },
+  "created_by": "seth",
+  "created_for": "wanderingstan",
+  "thread_id": null,
+  "visibility": "unlisted",
+  "audience": ["seth", "wanderingstan"],
+  "provenance": {
+    "source_type": "conversation",
+    "notes": "Generated from DM about SF pizza recommendations"
+  },
+  "expires_at": "2026-04-01T00:00:00Z"
+}

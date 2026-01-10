@@ -64,28 +64,28 @@ CREATE TABLE IF NOT EXISTS artifact_comments (
   artifact_id VARCHAR(50) NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
   author VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-
-  INDEX idx_comments_artifact (artifact_id, created_at DESC),
-  INDEX idx_comments_author (author)
+  created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_comments_artifact ON artifact_comments(artifact_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_comments_author ON artifact_comments(author);
 
 -- Forks tracking (denormalized for performance)
 CREATE TABLE IF NOT EXISTS artifact_forks (
   original_id VARCHAR(50) NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
   fork_id VARCHAR(50) NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT NOW(),
-
-  PRIMARY KEY (original_id, fork_id),
-  INDEX idx_forks_original (original_id, created_at DESC)
+  PRIMARY KEY (original_id, fork_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_forks_original ON artifact_forks(original_id, created_at DESC);
 
 -- Migration tracking
 CREATE TABLE IF NOT EXISTS artifact_migrations (
   id SERIAL PRIMARY KEY,
   artifact_id VARCHAR(50) NOT NULL,
   source VARCHAR(20) NOT NULL, -- 'kv' or 'manual'
-  migrated_at TIMESTAMP DEFAULT NOW(),
-
-  INDEX idx_migration_time (migrated_at)
+  migrated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_migration_time ON artifact_migrations(migrated_at);
