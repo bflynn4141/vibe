@@ -33,6 +33,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/style-demo", "destination": "/api/artifacts/pet-green-demo.html" },
     { "source": "/artifacts", "destination": "/api/artifacts-browse" },
     { "source": "/a/:slug", "destination": "/api/artifacts/:slug" },
     { "source": "/api/presence/heartbeat", "destination": "/api/presence/heartbeat.js" },
