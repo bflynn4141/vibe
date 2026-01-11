@@ -43,6 +43,7 @@
     { "source": "/api/profile", "destination": "/api/profile.js" },
     { "source": "/api/stats", "destination": "/api/stats.js" },
     { "source": "/api/board", "destination": "/api/board.js" },
+    { "source": "/api/observations", "destination": "/api/observations.js" },
     { "source": "/api/register", "destination": "/api/register.js" },
     { "source": "/api/invites", "destination": "/api/invites.js" },
     { "source": "/api/agents", "destination": "/api/agents.js" },

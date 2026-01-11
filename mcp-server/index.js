@@ -40,6 +40,7 @@ function inferPromptFromArgs(toolName, args) {
     case 'recall': return `recall ${handle}`;
     case 'forget': return `forget ${handle}`;
     case 'board': return args.content ? 'post to board' : 'view board';
+    case 'observe': return args.content ? 'record observation' : 'view observations';
     case 'invite': return 'generate invite';
     case 'echo': return 'send feedback';
     case 'x_mentions': return 'check x mentions';
@@ -210,6 +211,7 @@ const tools = {
   // Community
   vibe_invite: require('./tools/invite'),
   vibe_submit: require('./tools/submit'),
+  vibe_observe: require('./tools/observe'),
   // Creative Layer — Ideas, Requests, Ships
   vibe_idea: require('./tools/idea'),
   vibe_request: require('./tools/request'),
