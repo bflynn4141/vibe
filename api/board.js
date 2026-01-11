@@ -101,9 +101,101 @@ async function getEntries({ limit = 20, offset = 0, category = null }) {
 }
 
 /**
- * GET /api/board
+ * Create new board entry (POST)
+ */
+async function createEntry({ author, category, content, tags = [] }) {
+  const kv = await getKV();
+
+  // Validate required fields
+  if (!author || !category || !content) {
+    throw new Error('Missing required fields: author, category, content');
+  }
+
+  // Validate category
+  if (!VALID_CATEGORIES.includes(category)) {
+    throw new Error(`Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}`);
+  }
+
+  // Generate unique ID
+  const id = `${category}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const timestamp = Date.now();
+
+  // Create entry object
+  const entry = {
+    id,
+    author,
+    category,
+    content,
+    tags,
+    timestamp,
+    reactions: {},
+    comments: []
+  };
+
+  if (kv) {
+    try {
+      // Store entry
+      await kv.set(`board:entry:${id}`, entry);
+
+      // Add to main feed (newest first)
+      await kv.lpush(BOARD_LIST, id);
+
+      // Trim list to max entries
+      await kv.ltrim(BOARD_LIST, 0, BOARD_MAX_ENTRIES - 1);
+
+      // Add to category index
+      await kv.lpush(`board:category:${category}`, id);
+
+      // Add to user's posts
+      await kv.lpush(`board:user:${author}`, id);
+
+      return { success: true, id, entry };
+    } catch (e) {
+      console.error('[board] KV write error:', e.message);
+      // Fall back to memory
+      memoryBoard.unshift(entry);
+      if (memoryBoard.length > BOARD_MAX_ENTRIES) {
+        memoryBoard = memoryBoard.slice(0, BOARD_MAX_ENTRIES);
+      }
+      return { success: true, id, entry };
+    }
+  } else {
+    // Memory-only mode
+    memoryBoard.unshift(entry);
+    if (memoryBoard.length > BOARD_MAX_ENTRIES) {
+      memoryBoard = memoryBoard.slice(0, BOARD_MAX_ENTRIES);
+    }
+    return { success: true, id, entry };
+  }
+}
+
+/**
+ * Main handler - supports GET and POST
  */
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const { author, category, content, tags } = req.body;
+      const result = await createEntry({ author, category, content, tags });
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('[board] POST error:', error.message);
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
   if (req.method === 'GET') {
     const { limit, offset, category } = req.query;
 
