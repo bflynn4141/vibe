@@ -8,6 +8,8 @@
  * GET /api/claude-activity - Get activity feed (optionally filtered)
  * GET /api/claude-activity?handle=@user - Get user's Claude activity
  * GET /api/claude-activity?stream=true - SSE stream (real-time)
+ * GET /api/claude-activity?stats=true - Basic stats (activity count)
+ * GET /api/claude-activity?sessions=true - **THE INTELLIGENCE LAYER**
  *
  * Activity Types:
  * - reading: Files being read/explored
@@ -16,10 +18,18 @@
  * - tool: Tools being used (grep, bash, etc)
  * - suggestion: Fixes/improvements suggested
  *
+ * Derived Signals (computed on ?sessions=true):
+ * - dwellTimes: Time spent per activity type (in ms)
+ * - entropy: Workflow chaos 0.0-1.0 (low = linear, high = exploratory)
+ * - retryLoops: Count of tool/thinking error loops (friction detection)
+ * - abandonmentPoint: Last activity if session ended without success
+ * - flowStateDetected: Boolean indicating productive write→tool rhythm
+ *
  * The Moat:
- * - Aggregate patterns → Templates
- * - Popular workflows → Discovery
- * - Desire paths → Product evolution
+ * - Transitions > Activities (the edges matter more than the nodes)
+ * - Process > Output (how matters more than what)
+ * - Silent learning (platform derives intelligence, clients send raw events)
+ * - Aggregate patterns → Templates → Agent learning
  */
 
 import crypto from 'crypto';
@@ -192,6 +202,219 @@ async function getActivityStats() {
   return { totalActivities: memoryActivities.length };
 }
 
+// ============ DERIVED SIGNALS (The Intelligence Layer) ============
+
+/**
+ * Calculate dwell time per activity type
+ * Time spent between consecutive activities of the same type
+ */
+function calculateDwellTimes(activities) {
+  const dwellTimes = {
+    reading: 0,
+    writing: 0,
+    thinking: 0,
+    tool: 0,
+    suggestion: 0
+  };
+
+  for (let i = 0; i < activities.length - 1; i++) {
+    const current = activities[i];
+    const next = activities[i + 1];
+
+    if (next && current.type === next.type) {
+      const dwell = next.timestamp - current.timestamp;
+      // Cap at 5 minutes to avoid idle time inflation
+      if (dwell < 300000) {
+        dwellTimes[current.type] += dwell;
+      }
+    }
+  }
+
+  return dwellTimes;
+}
+
+/**
+ * Calculate Shannon entropy of activity type distribution
+ * Low entropy (0.0-0.4) = Linear workflow (focused)
+ * Medium entropy (0.4-0.7) = Balanced workflow
+ * High entropy (0.7-1.0) = Chaotic exploration
+ */
+function calculateEntropy(activities) {
+  if (activities.length === 0) return 0;
+
+  // Count activity type frequencies
+  const typeCounts = {};
+  activities.forEach(a => {
+    typeCounts[a.type] = (typeCounts[a.type] || 0) + 1;
+  });
+
+  // Calculate Shannon entropy
+  const total = activities.length;
+  let entropy = 0;
+
+  Object.values(typeCounts).forEach(count => {
+    const probability = count / total;
+    if (probability > 0) {
+      entropy -= probability * Math.log2(probability);
+    }
+  });
+
+  // Normalize to 0-1 range (max entropy for 5 types is log2(5) ≈ 2.32)
+  return Math.min(entropy / 2.32, 1);
+}
+
+/**
+ * Detect retry loops: tool/thinking repetition patterns
+ * Indicates friction, errors, or stuck debugging
+ */
+function detectRetryLoops(activities) {
+  let retryCount = 0;
+
+  for (let i = 0; i < activities.length - 1; i++) {
+    const current = activities[i];
+    const next = activities[i + 1];
+
+    if (!next) continue;
+
+    const timeDiff = next.timestamp - current.timestamp;
+
+    // Retry pattern: same activity type within 30 seconds
+    if (current.type === next.type && timeDiff < 30000) {
+      // Tool or thinking loops are especially indicative of friction
+      if (current.type === 'tool' || current.type === 'thinking') {
+        // Check content for error signals
+        const errorSignals = ['error', 'failed', 'timeout', 'retry', 'fix'];
+        const hasError = errorSignals.some(signal =>
+          current.content?.toLowerCase().includes(signal) ||
+          current.details?.toLowerCase().includes(signal)
+        );
+
+        if (hasError) {
+          retryCount++;
+        }
+      }
+    }
+  }
+
+  return retryCount;
+}
+
+/**
+ * Find abandonment point
+ * Last activity type before session ends (if no clear success)
+ * Common abandonment patterns: thinking → stop, tool (error) → stop
+ */
+function findAbandonmentPoint(activities) {
+  if (activities.length === 0) return null;
+
+  const lastActivity = activities[activities.length - 1];
+
+  // Check if last activity indicates success
+  const successSignals = ['success', 'complete', 'done', 'fixed', 'resolved'];
+  const hasSuccess = successSignals.some(signal =>
+    lastActivity.content?.toLowerCase().includes(signal) ||
+    lastActivity.details?.toLowerCase().includes(signal)
+  );
+
+  if (hasSuccess) return null;
+
+  // Return abandonment context
+  return {
+    type: lastActivity.type,
+    content: lastActivity.content?.substring(0, 50),
+    timestamp: lastActivity.timestamp
+  };
+}
+
+/**
+ * Detect flow state: rhythmic write → tool → success patterns
+ * Indicates productive, unblocked work
+ */
+function detectFlowState(activities) {
+  if (activities.length < 3) return false;
+
+  let flowSequences = 0;
+  const requiredFlowSequences = 2; // Need at least 2 to confirm flow
+
+  for (let i = 0; i < activities.length - 2; i++) {
+    const a1 = activities[i];
+    const a2 = activities[i + 1];
+    const a3 = activities[i + 2];
+
+    // Flow pattern: writing → tool → (writing|tool)
+    // Time between actions should be < 2 minutes (productive rhythm)
+    const t1 = a2.timestamp - a1.timestamp;
+    const t2 = a3.timestamp - a2.timestamp;
+
+    if (t1 < 120000 && t2 < 120000) {
+      if (a1.type === 'writing' && a2.type === 'tool') {
+        if (a3.type === 'writing' || a3.type === 'tool') {
+          flowSequences++;
+        }
+      }
+    }
+  }
+
+  return flowSequences >= requiredFlowSequences;
+}
+
+/**
+ * Calculate session duration
+ */
+function calculateDuration(activities) {
+  if (activities.length === 0) return 0;
+  const first = activities[0];
+  const last = activities[activities.length - 1];
+  return last.timestamp - first.timestamp;
+}
+
+/**
+ * Group activities by session and derive metrics
+ */
+function groupBySession(activities) {
+  const sessions = {};
+
+  // Group by sessionId
+  activities.forEach(activity => {
+    const sessionId = activity.sessionId || 'unknown';
+    if (!sessions[sessionId]) {
+      sessions[sessionId] = {
+        id: sessionId,
+        handle: activity.handle,
+        activities: []
+      };
+    }
+    sessions[sessionId].activities.push(activity);
+  });
+
+  // Sort activities within each session by timestamp
+  Object.values(sessions).forEach(session => {
+    session.activities.sort((a, b) => a.timestamp - b.timestamp);
+  });
+
+  // Derive metrics for each session
+  return Object.values(sessions).map(session => {
+    const { activities } = session;
+
+    return {
+      id: session.id,
+      handle: session.handle,
+      started_at: activities[0]?.timestamp,
+      ended_at: activities[activities.length - 1]?.timestamp,
+      activity_count: activities.length,
+      activities,
+      metrics: {
+        duration: calculateDuration(activities),
+        dwellTimes: calculateDwellTimes(activities),
+        entropy: calculateEntropy(activities),
+        retryLoops: detectRetryLoops(activities),
+        abandonmentPoint: findAbandonmentPoint(activities),
+        flowStateDetected: detectFlowState(activities)
+      }
+    };
+  });
+}
+
 // ============ HTTP HANDLER ============
 
 export default async function handler(req, res) {
@@ -267,7 +490,7 @@ export default async function handler(req, res) {
       return rateLimitResponse(res, allowed);
     }
 
-    const { handle, limit, offset, stats, stream } = req.query;
+    const { handle, limit, offset, stats, stream, sessions } = req.query;
 
     // SSE streaming support (for real-time feed)
     if (stream === 'true') {
@@ -297,6 +520,30 @@ export default async function handler(req, res) {
     if (stats === 'true') {
       const statistics = await getActivityStats();
       return res.status(200).json(statistics);
+    }
+
+    // Session metrics endpoint (THE INTELLIGENCE LAYER)
+    if (sessions === 'true') {
+      try {
+        const activities = await getActivityFeed({
+          handle: handle?.toLowerCase().replace('@', ''),
+          limit: parseInt(limit) || 200, // Higher limit for session analysis
+          offset: parseInt(offset) || 0
+        });
+
+        const sessionData = groupBySession(activities);
+
+        return res.status(200).json({
+          sessions: sessionData,
+          meta: {
+            totalSessions: sessionData.length,
+            totalActivities: activities.length
+          }
+        });
+      } catch (error) {
+        console.error('Session analysis failed:', error);
+        return res.status(500).json({ error: 'Failed to analyze sessions' });
+      }
     }
 
     // Regular feed
