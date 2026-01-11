@@ -19,61 +19,85 @@ export default async function handler(req, res) {
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #0a0a0a;
-      color: #e0e0e0;
+      background: #000;
+      color: #00FF41;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
       line-height: 1.6;
       padding: 40px 20px;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 2px rgba(0, 255, 65, 0.3);
+    }
+
+    /* Scan lines CRT effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 80ch;
       margin: 0 auto;
     }
 
     header {
-      margin-bottom: 60px;
+      border: 1px solid #00FF41;
+      padding: 20px;
+      margin-bottom: 40px;
       text-align: center;
     }
 
     h1 {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, #6B8FFF 0%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 15px;
+      text-transform: uppercase;
     }
 
     .subtitle {
-      color: #888;
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
+      color: #00AA2B;
+      font-size: 12px;
+      margin-bottom: 20px;
     }
 
     .stats {
       display: flex;
-      gap: 30px;
+      gap: 20px;
       justify-content: center;
-      margin-bottom: 20px;
+      border-top: 1px solid #00AA2B;
+      padding-top: 15px;
+      margin-top: 15px;
     }
 
     .stat {
-      color: #666;
-      font-size: 0.9rem;
+      color: #00AA2B;
+      font-size: 11px;
+      text-align: center;
     }
 
     .stat strong {
-      color: #6B8FFF;
-      font-size: 1.5rem;
+      color: #88FFA8;
+      font-size: 16px;
+      font-weight: 400;
       display: block;
+      margin-bottom: 5px;
     }
 
     .loading {
       text-align: center;
       padding: 100px 20px;
-      color: #666;
-      font-size: 1.2rem;
+      color: #00AA2B;
+      font-size: 14px;
     }
 
     .loading::after {
@@ -90,93 +114,90 @@ export default async function handler(req, res) {
     .error {
       text-align: center;
       padding: 100px 20px;
-      color: #ff6b6b;
+      color: #88FFA8;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 24px;
-      margin-top: 40px;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-top: 30px;
     }
 
     .card {
-      background: #1a1a1a;
-      border-radius: 12px;
-      padding: 24px;
-      border: 1px solid #2a2a2a;
-      transition: all 0.2s ease;
+      background: rgba(0, 255, 65, 0.02);
+      border: 1px solid #00FF41;
+      padding: 20px;
       cursor: pointer;
       text-decoration: none;
-      color: inherit;
+      color: #00FF41;
       display: block;
+      transition: all 0.2s ease;
     }
 
     .card:hover {
-      border-color: #6B8FFF;
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(107, 143, 255, 0.15);
+      background: rgba(0, 255, 65, 0.05);
+      box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
     }
 
     .card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .template-badge {
       display: inline-block;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
+      padding: 2px 8px;
+      border: 1px solid #00FF41;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .template-guide {
-      background: #6B8FFF20;
-      color: #6B8FFF;
+      border-color: #00FF41;
+      color: #00FF41;
     }
 
     .template-learning {
-      background: #4ecdc420;
-      color: #4ecdc4;
+      border-color: #88FFA8;
+      color: #88FFA8;
     }
 
     .template-workspace {
-      background: #ff6b6b20;
-      color: #ff6b6b;
+      border-color: #00AA2B;
+      color: #00AA2B;
     }
 
     .card-title {
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #fff;
+      font-size: 16px;
+      font-weight: 400;
+      margin-bottom: 10px;
+      text-transform: uppercase;
     }
 
     .card-meta {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 12px;
-      font-size: 0.85rem;
-      color: #888;
+      font-size: 12px;
+      color: #00AA2B;
     }
 
     .creator {
-      color: #6B8FFF;
+      color: #88FFA8;
+    }
+
+    .creator::before {
+      content: '> ';
     }
 
     .date {
-      color: #666;
+      color: #00AA2B;
     }
 
     .card-preview {
-      color: #aaa;
-      font-size: 0.95rem;
+      color: #00FF41;
+      font-size: 13px;
       line-height: 1.5;
       overflow: hidden;
       display: -webkit-box;
@@ -187,44 +208,82 @@ export default async function handler(req, res) {
     .empty {
       text-align: center;
       padding: 100px 20px;
-      color: #666;
+      color: #00AA2B;
     }
 
     .empty h2 {
-      color: #888;
-      margin-bottom: 1rem;
+      color: #00FF41;
+      font-weight: 400;
+      text-transform: uppercase;
+      margin-bottom: 15px;
     }
 
     footer {
-      margin-top: 80px;
-      padding-top: 40px;
-      border-top: 1px solid #2a2a2a;
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #00FF41;
       text-align: center;
-      color: #666;
-      font-size: 0.9rem;
+      color: #00AA2B;
+      font-size: 12px;
     }
 
     footer a {
-      color: #6B8FFF;
+      color: #88FFA8;
       text-decoration: none;
+      border-bottom: 1px solid #88FFA8;
     }
 
     footer a:hover {
-      text-decoration: underline;
+      color: #00FF41;
+      text-shadow: 0 0 4px rgba(0, 255, 65, 0.6);
+    }
+
+    .cursor {
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
     }
 
     @media (max-width: 768px) {
-      .grid {
-        grid-template-columns: 1fr;
+      .stats {
+        flex-wrap: wrap;
+        gap: 15px;
       }
 
       h1 {
-        font-size: 2rem;
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      body {
+        font-size: 13px;
+        padding: 20px 10px;
+      }
+
+      .container {
+        max-width: 100%;
+        padding: 0 10px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .card {
+        padding: 15px;
       }
 
       .stats {
-        flex-direction: column;
-        gap: 15px;
+        gap: 10px;
+      }
+
+      .stat {
+        font-size: 12px;
       }
     }
   </style>
@@ -259,7 +318,7 @@ export default async function handler(req, res) {
     </div>
 
     <footer>
-      <p>Created with <a href="https://slashvibe.dev">/vibe</a> — social layer for Claude Code</p>
+      <p>/vibe · <a href="https://slashvibe.dev">slashvibe.dev</a> · social layer for Claude Code<span class="cursor">_</span></p>
     </footer>
   </div>
 
