@@ -102,9 +102,14 @@ module.exports = async (req, res) => {
     try {
       // Read projects.json (with fallback for serverless env)
       let projects = [];
+      let data = {
+        projects: [],
+        stats: { totalProjects: 0, liveProjects: 0, categories: [] }
+      };
+
       try {
         const projectsPath = path.join(process.cwd(), 'data/projects.json');
-        const data = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
+        data = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
         projects = data.projects;
       } catch (fileError) {
         console.error('[projects] Failed to read projects.json:', fileError.message);
