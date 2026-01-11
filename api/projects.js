@@ -11,9 +11,10 @@
  * POST /api/projects - Submit new project to pending queue
  */
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import crypto from 'crypto';
+
+// Import projects data at build time (bundled, no runtime fs access)
+import projectsData from '../data/projects.json' with { type: 'json' };
 
 // Check if KV is configured
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -88,7 +89,7 @@ function isVercelDeployment(url) {
   );
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -100,22 +101,9 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     try {
-      // Read projects.json (with fallback for serverless env)
-      let projects = [];
-      let data = {
-        projects: [],
-        stats: { totalProjects: 0, liveProjects: 0, categories: [] }
-      };
-
-      try {
-        const projectsPath = path.join(process.cwd(), 'data/projects.json');
-        data = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
-        projects = data.projects;
-      } catch (fileError) {
-        console.error('[projects] Failed to read projects.json:', fileError.message);
-        console.log('[projects] Falling back to KV-only mode');
-        // Continue with empty projects array, will merge KV data below
-      }
+      // Use bundled projects data (imported at build time)
+      let projects = [...projectsData.projects];
+      const data = projectsData;
 
       // Merge in approved projects from KV (user-submitted, auto-approved)
       const kv = await getKV();
@@ -331,4 +319,4 @@ module.exports = async (req, res) => {
     success: false,
     error: 'Method not allowed'
   });
-};
+}
