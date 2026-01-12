@@ -1,185 +1,158 @@
-# VIBE
+# /vibe Platform
 
-**The Social CLI**
+**Backend infrastructure for the /vibe social network for Claude Code users.**
 
-Terminal with presence, sessions, and agents.
+Live at: https://slashvibe.dev
 
-## Week 1 Foundation ✅ COMPLETE
-
-**Status: Working and verified** (Jan 8, 2026)
-
-- ✅ Real PTY terminal (zsh/bash)
-- ✅ xterm.js frontend with Spirit blue theme
-- ✅ Session recording to SQLite (~/.vibecodings/sessions.db)
-- ✅ Command/output logging with timestamps
-- ✅ Terminal resize handling
-- 🚧 Session replay UI (next)
-- 🚧 Shell integration markers (next)
-- 🚧 Export session JSON (next)
-
-## Prerequisites
-
-- **Rust** (stable) - https://rustup.rs/
-- **Node.js** (18+) - https://nodejs.org/
-- **pnpm** (recommended) - `npm install -g pnpm`
-
-## Quick Start
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run in development mode
-pnpm tauri dev
-```
-
-The terminal window will open. You now have:
-- A real shell (zsh on Mac)
-- Every command + output is recorded to SQLite
-- Sessions stored in `~/.vibecodings/sessions.db`
-
-**To verify it's working, see [VERIFY.md](./VERIFY.md)**
-
-## Project Structure
+## Current Status (Jan 12, 2026)
 
 ```
-vibe-terminal/
-├── src-tauri/          # Rust backend
-│   ├── src/
-│   │   ├── main.rs     # Tauri entry + commands
-│   │   ├── pty.rs      # PTY management
-│   │   └── db.rs       # SQLite session storage
-│   └── Cargo.toml
-├── src/                # React frontend
-│   ├── components/
-│   │   └── Terminal.tsx  # xterm.js wrapper
-│   ├── App.tsx
-│   └── main.tsx
-└── package.json
+┌─────────────────────────────────────────────────────────────┐
+│ SERVICE HEALTH: HEALTHY                                     │
+├─────────────────────────────────────────────────────────────┤
+│ Registered Handles: 46        Genesis Remaining: 54         │
+│ Active Users: 4-8             System Status: All Green      │
+├─────────────────────────────────────────────────────────────┤
+│ KV (Redis):   ✓ healthy       Postgres: ✓ healthy           │
+│ Presence:     ✓ healthy       Board:    ✓ healthy           │
+│ Messages:     ✓ healthy       Growth:   ✓ healthy           │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## What's Working
+## What This Is
 
-**Terminal:**
-- Spawns real shell (zsh on macOS, bash elsewhere)
-- Full line editing, history, tab completion (shell handles it)
-- xterm.js rendering with proper theming
-- Resize handling
-
-**Session Recording:**
-- Creates session on startup (UUID)
-- Logs all commands + output to SQLite
-- Tracks session start/end times
-- Stores current working directory + shell type
-
-**Database:**
-- `sessions` table: session metadata
-- `events` table: command/output events
-- Located at `~/.vibecodings/sessions.db`
-
-## What's Next (Week 1 Completion)
-
-- [ ] Shell integration markers (OSC sequences for command boundaries)
-- [ ] Session replay UI (view past sessions)
-- [ ] Block-based output (group command → output)
-- [ ] Export session JSON
+/vibe is the social layer for developers building with Claude Code:
+- **Presence** - See who's building right now
+- **DMs** - Terminal-native messaging between developers
+- **Ships** - Share what you built with shareable cards
+- **Streaks** - Track consecutive days of building
+- **Genesis** - First 100 users get special status
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────┐
-│         Tauri App (Vibe)            │
-├──────────────┬──────────────────────┤
-│  Terminal    │  Social (placeholder)│
-│  (xterm.js)  │                      │
-└──────────────┴──────────────────────┘
-       ↕                ↕
-┌──────────────┬──────────────────────┐
-│ Rust Backend │                      │
-│ - PTY        │  SQLite              │
-│ - I/O loop   │  sessions.db         │
-└──────────────┴──────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│   vibe-terminal (~/vibe-terminal)                           │
+│   └─ Native Mac app: terminal + social sidebar              │
+│                      ↓                                       │
+│   vibe-platform (THIS REPO)                                 │
+│   └─ Backend APIs at slashvibe.dev                          │
+│   └─ 117 MCP tools for Claude Code integration              │
+│                      ↓                                       │
+│   Storage: Vercel KV (Redis) + Postgres                     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Development
+## Core APIs
 
-**Rust side:**
-```bash
-cd src-tauri
-cargo build
-```
+| Endpoint | Purpose |
+|----------|---------|
+| `GET/POST /api/presence` | Who's online, heartbeats |
+| `GET/POST /api/messages` | DM inbox and sending |
+| `GET/POST /api/board` | Ships, ideas, community feed |
+| `GET /api/profile?user=X` | User profiles |
+| `GET /api/health?full=true` | Service health monitoring |
+| `GET /api/growth/leaderboard` | Adoption leaderboard |
+| `GET/POST /api/growth/streak` | Streak tracking |
+| `GET /api/share/:id` | Shareable ship cards |
+| `POST /api/users` | User registration |
+| `POST /api/invites` | Invite code generation |
 
-**Frontend:**
-```bash
-pnpm dev  # Vite dev server
-```
-
-**Both together:**
-```bash
-pnpm tauri dev
-```
-
-## Building for Release
+## Quick Start (MCP Server)
 
 ```bash
-pnpm tauri build
+# Install the MCP server
+claude mcp add vibe-mcp
+
+# Initialize with your handle
+# Tell Claude: "vibe init as @yourhandle"
+
+# See who's online
+# Tell Claude: "vibe who"
+
+# Send a message
+# Tell Claude: "vibe dm @seth hello!"
 ```
 
-Creates a `.dmg` in `src-tauri/target/release/bundle/dmg/`
+## Key Files
 
-## Database Schema
-
-**Sessions:**
-```sql
-CREATE TABLE sessions (
-  id TEXT PRIMARY KEY,
-  started_at TEXT NOT NULL,
-  ended_at TEXT,
-  cwd TEXT,
-  shell TEXT
-);
+```
+vibe-platform/
+├── api/                    # Vercel serverless functions
+│   ├── presence.js         # Who's online
+│   ├── messages.js         # DM system
+│   ├── board.js            # Ships/ideas feed
+│   ├── users.js            # Registration (with handle claiming)
+│   ├── invites.js          # Invite code system
+│   ├── health.js           # Service monitoring
+│   ├── growth/             # Viral mechanics
+│   │   ├── leaderboard.js  # Adoption rankings
+│   │   └── streak.js       # Daily streaks
+│   ├── share/[id].js       # Shareable ship cards
+│   └── lib/
+│       ├── handles.js      # Handle registry (genesis tracking)
+│       └── ratelimit.js    # Rate limiting
+├── mcp-server/             # Claude Code MCP integration
+│   ├── tools/              # 117 MCP tools
+│   └── store/              # API client
+├── public/
+│   └── llms.txt            # AI assistant documentation
+└── vercel.json             # Routing config
 ```
 
-**Events:**
-```sql
-CREATE TABLE events (
-  id TEXT PRIMARY KEY,
-  session_id TEXT NOT NULL,
-  ts TEXT NOT NULL,
-  kind TEXT NOT NULL,  -- 'pty_out' | 'user_in' | 'marker'
-  data TEXT NOT NULL,
-  FOREIGN KEY(session_id) REFERENCES sessions(id)
-);
+## Recent Developments (Jan 11-12, 2026)
+
+### Critical Fixes
+- **Handle Registration Bug** - Users now properly tracked in `vibe:handles` hash
+  - Was: 22 users stuck for days (only in legacy `user:*` keys)
+  - Now: 46 handles properly registered with genesis tracking
+- **System Account Filtering** - Bots/bridges filtered from active user lists
+- **API URL Fix** - All MCP tools now use `www.slashvibe.dev` (fixes POST redirect)
+
+### Viral Growth Infrastructure
+- **Share Cards** (`/api/share/:id`) - Every ship gets a beautiful shareable page with OG tags
+- **Streak System** (`/api/growth/streak`) - 7-day streak = Verified Builder badge
+- **Growth Leaderboard** (`/api/growth/leaderboard`) - Ranks users by invites + activity
+- **Auto-streak Recording** - Ships automatically record daily activity
+
+### Core Loop
+```
+Build → Ship → Share → Get seen → Invite friends → Repeat
 ```
 
-## Viewing Sessions
+## Environment Variables
+
+Required in Vercel:
+- `KV_REST_API_URL` - Vercel KV endpoint
+- `KV_REST_API_TOKEN` - Vercel KV auth
+- `POSTGRES_URL` - Neon Postgres connection
+- `VIBE_GENESIS_CAP` - Genesis limit (set to 100)
+
+## Monitoring
 
 ```bash
-sqlite3 ~/.vibecodings/sessions.db "SELECT * FROM sessions ORDER BY started_at DESC LIMIT 10;"
+# Quick health check
+curl https://www.slashvibe.dev/api/health
+
+# Full health with all services
+curl https://www.slashvibe.dev/api/health?full=true
+
+# Growth leaderboard
+curl https://www.slashvibe.dev/api/growth/leaderboard
 ```
 
-## Troubleshooting
+## Related Repos
 
-**Terminal not opening:**
-- Check Rust is installed: `rustc --version`
-- Check Tauri CLI: `pnpm tauri info`
+- **vibe-terminal** (`~/vibe-terminal`) - Native Mac desktop app
+- **vibecodings** (`~/Projects/vibecodings`) - Project showcase site
 
-**Output lag:**
-- Currently polling every 10ms - will optimize with events
+## Links
 
-**Build errors:**
-- Run `cargo clean` in `src-tauri/`
-- Delete `node_modules` and `pnpm install` again
-
-## Next Phase
-
-**Week 2-3:** Claude Code integration
-**Week 4-5:** Social sidebar (presence + messages)
-**Week 6-7:** Games + collaboration
-**Week 8-9:** Session sharing + polish
+- **Live**: https://slashvibe.dev
+- **API**: https://www.slashvibe.dev/api/
+- **MCP Install**: `claude mcp add vibe-mcp`
+- **Docs**: https://slashvibe.dev/docs
 
 ---
 
-**This is the foundation.** Everything builds on this PTY + session recording core.
-
-Let's ship it.
+**Part of Spirit Protocol** | Building the social layer for AI-native development

@@ -4,6 +4,16 @@
 
 Think Discord meets GitHub meets terminal - but for the AI coding era. When you run `/vibe` in Claude Code, you're connecting to this platform.
 
+## Current Status (Jan 12, 2026)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ SERVICE: HEALTHY          HANDLES: 46/100 genesis          │
+├─────────────────────────────────────────────────────────────┤
+│ KV: ✓  Postgres: ✓  Presence: ✓  Messages: ✓  Growth: ✓    │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## The Big Picture
 
 ```
@@ -25,82 +35,113 @@ Think Discord meets GitHub meets terminal - but for the AI coding era. When you 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## What Users Do Here
+---
 
-- **DM other developers** while coding (`vibe dm @handle`)
-- **Share ships/ideas** to the creative feed (`vibe ship "Built X"`)
-- **See who's online** and what they're building (`vibe who`)
-- **Play games** during breaks (23 games: chess, hangman, etc.)
-- **Track observations** - AGI self-expression layer
-- **Coordinate AI agents** via AIRC protocol
+## For Terminal Product Session
 
-## The Vision
+### API Endpoints Terminal Needs
 
-> "VIBE makes the command line social."
+```javascript
+const API = 'https://www.slashvibe.dev/api';
 
-Like AOL brought people online. Like Instagram made everyone a photographer. VIBE makes coding a shared experience instead of a solo activity.
+// Presence (sidebar "who's online")
+GET  ${API}/presence              // Returns {active: [...], away: [...]}
+POST ${API}/presence              // Heartbeat: {username, workingOn, project}
+
+// Messages (DM notifications)
+GET  ${API}/messages?user=X       // Returns {inbox: [...], unread: N}
+POST ${API}/messages              // Send: {from, to, text}
+
+// Board (ship feed)
+GET  ${API}/board                 // Returns {entries: [...]}
+POST ${API}/board                 // Post: {author, category, content}
+                                  // Returns {shareUrl} for viral sharing
+
+// Growth (streaks, leaderboard)
+GET  ${API}/growth/streak?user=X  // Returns {current, badges, daysUntilBadge}
+GET  ${API}/growth/leaderboard    // Returns top 50 by growth score
+
+// Health (status bar indicator)
+GET  ${API}/health                // Quick check
+GET  ${API}/health?full=true      // Detailed with all services
+```
+
+### Integration Checklist for vibe-terminal
+
+- [ ] **Sidebar Presence**: Poll `/api/presence` every 30s, show active users
+- [ ] **Heartbeat**: POST to `/api/presence` on app start + every 5 min
+- [ ] **DM Badge**: Poll `/api/messages?user=X`, show unread count
+- [ ] **Ship Feed**: Display `/api/board` entries in social panel
+- [ ] **Streak Display**: Show user's streak in status bar from `/api/growth/streak`
+- [ ] **Health Indicator**: Show green/red dot from `/api/health`
+
+### Key Gotchas
+
+1. **Use `www.slashvibe.dev`** - Non-www redirects lose POST body
+2. **System accounts filtered** - solienne, vibe, etc. won't appear in active list
+3. **No auth required** for most reads, handle validated on registration
 
 ---
 
-# VIBE Platform
-
-## What This Is
-Backend infrastructure for the VIBE ecosystem. APIs, databases, and services that power vibe-terminal and the broader social coding network.
-
-## Tech Stack
-- **Runtime**: Node.js serverless (Vercel)
-- **Database**: Postgres (artifacts, sessions) + Vercel KV (real-time)
-- **APIs**: REST endpoints for all VIBE features
-
-## Current Status
-✅ **14 APIs healthy** (as of Jan 12, 2026):
-
-| Core | Social | Safety | Data |
-|------|--------|--------|------|
-| Board | Presence | Consent | Projects |
-| Observations | Messages | Report | Artifacts |
-| Claude-Activity | Friends | | Stats |
-| Profile | Games | | Watch |
-
-⚠️ Economic layer (payments, reputation, ping) needs CommonJS→ESM migration
-
 ## Core APIs
 
-### /api/board
-Ideas, requests, ships - the social feed
-- GET /api/board - fetch posts
-- POST /api/board - create post
+| Endpoint | Purpose | Terminal Use |
+|----------|---------|--------------|
+| `/api/presence` | Who's online | Sidebar |
+| `/api/messages` | DM system | Notifications |
+| `/api/board` | Ships/ideas feed | Social panel |
+| `/api/profile?user=X` | User profiles | Click to view |
+| `/api/growth/streak` | Streak tracking | Status bar |
+| `/api/growth/leaderboard` | Rankings | Leaderboard view |
+| `/api/share/:id` | Ship cards | Share to Twitter |
+| `/api/health` | Service status | Connection indicator |
 
-### /api/observations  
-Session observations and activity tracking
-- GET /api/observations
-- POST /api/observations
+## Recent Fixes (Jan 12)
 
-### /api/claude-activity
-Track Claude Code usage patterns
-
-### /api/projects
-Project registry for vibecodings.vercel.app
-
-### /api/games
-Multiplayer games (tic-tac-toe, hangman, word association)
-
-### /api/watch
-Live session broadcasting
+1. **Handle registration bug** - Users now properly tracked in `vibe:handles`
+2. **System account filtering** - Bots/bridges filtered from active lists
+3. **Viral growth infra** - Share cards, streaks, leaderboard shipped
+4. **Message trimming** - 10k limit prevents unbounded growth
 
 ## Key Files
-- /api/ - All API endpoints
-- /lib/ratelimit.js - Rate limiting
-- API_HEALTH_REPORT.md - Status tracking
 
-## Current Phase
-**Production Ready** - APIs stable, ready for Week 2 terminal features
+```
+api/
+├── presence.js      # Who's online (filters system accounts)
+├── messages.js      # DMs (10k message limit)
+├── board.js         # Ships (returns shareUrl, records streaks)
+├── users.js         # Registration (claims handle properly now)
+├── health.js        # Service monitoring
+├── growth/
+│   ├── leaderboard.js
+│   └── streak.js
+├── share/[id].js    # Shareable ship cards
+└── lib/
+    └── handles.js   # Handle registry (genesis tracking)
+```
 
-## Next Up
-- Session Graph APIs (Week 3+)
-- Replay/fork endpoints
-- Network/social graph queries
+## Monitoring
 
-## Related
-- vibe-terminal (consumer of these APIs)
-- slashvibe.dev (MCP tools that call these APIs)
+```bash
+# Quick health
+curl https://www.slashvibe.dev/api/health
+
+# Full status
+curl https://www.slashvibe.dev/api/health?full=true | jq '.stats'
+
+# Growth leaderboard
+curl https://www.slashvibe.dev/api/growth/leaderboard | jq '.stats'
+```
+
+---
+
+## Related Repos
+
+- **vibe-terminal** (`~/vibe-terminal`) - Native Mac desktop app
+- **vibecodings** (`~/Projects/vibecodings`) - Project showcase
+
+## Links
+
+- Live: https://slashvibe.dev
+- API: https://www.slashvibe.dev/api/
+- Health: https://www.slashvibe.dev/api/health?full=true
