@@ -62,11 +62,19 @@ async function handleGet(req, res) {
     const totalSent = await kv.get(`tips:total:sent:${cleanHandle}`) || 0;
     const totalReceived = await kv.get(`tips:total:received:${cleanHandle}`) || 0;
 
+    // Parse items - handle both string and object formats
+    const parseTip = (t) => {
+      if (typeof t === 'string') {
+        try { return JSON.parse(t); } catch { return null; }
+      }
+      return t;
+    };
+
     return res.json({
       success: true,
       handle: cleanHandle,
-      sent: type === 'received' ? [] : sent.map(t => JSON.parse(t)),
-      received: type === 'sent' ? [] : received.map(t => JSON.parse(t)),
+      sent: type === 'received' ? [] : sent.map(parseTip).filter(Boolean),
+      received: type === 'sent' ? [] : received.map(parseTip).filter(Boolean),
       totals: {
         sent: totalSent,
         received: totalReceived,
@@ -82,7 +90,16 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    const { from, to, amount, message } = req.body;
+    // Parse body if needed (Vercel usually does this, but just in case)
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    if (!body || typeof body !== 'object') {
+      body = {};
+    }
+
+    const { from, to, amount, message } = body;
 
     // Validation
     if (!from || !to) {
