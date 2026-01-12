@@ -2,34 +2,34 @@
  * GET /api/reputation/score
  *
  * Get reputation score and tier info for a user
+ * Returns default "genesis" tier if user not found (graceful onboarding)
  *
  * Query params:
  * - handle: User handle (required)
- *
- * Response:
- * {
- *   "success": true,
- *   "handle": "@alice",
- *   "overall_score": 1250,
- *   "tier": "silver",
- *   "scores": {
- *     "economic": 500,
- *     "social": 200,
- *     "expert": 400,
- *     "creator": 50
- *   },
- *   "badges": ["early_adopter", "generous_tipper"],
- *   "next_tier": "gold",
- *   "progress_to_next": 0.625,
- *   "tier_unlocks": {...},
- *   "rank": 42
- * }
  */
 
-const { sql } = require('../lib/db');
+import { getSQL, isPostgresEnabled } from '../../lib/db.js';
+import { kv } from '@vercel/kv';
 
-module.exports = async function handler(req, res) {
-  // CORS
+// Default tier structure for new users
+const DEFAULT_TIER = {
+  tier: 'genesis',
+  overall_score: 0,
+  scores: { economic: 0, social: 0, expert: 0, creator: 0 },
+  daily_budget: 10,
+  unlocks: ['basic_messaging', 'presence', 'discovery']
+};
+
+const TIER_THRESHOLDS = [
+  { tier: 'genesis', min: 0, daily_budget: 10 },
+  { tier: 'bronze', min: 100, daily_budget: 25 },
+  { tier: 'silver', min: 500, daily_budget: 50 },
+  { tier: 'gold', min: 2000, daily_budget: 100 },
+  { tier: 'platinum', min: 5000, daily_budget: 250 },
+  { tier: 'diamond', min: 10000, daily_budget: 500 }
+];
+
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -51,106 +51,149 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const cleanHandle = handle.replace('@', '');
+    const cleanHandle = handle.replace('@', '').toLowerCase();
 
-    // Get reputation score
-    const scoreResult = await sql`
-      SELECT * FROM reputation_scores
-      WHERE handle = ${cleanHandle}
-    `;
-
-    if (scoreResult.length === 0) {
-      return res.status(404).json({
-        error: 'Reputation score not found',
-        message: 'Start earning reputation by participating in the ecosystem!'
+    // Try to get from KV cache first (fast path)
+    const cached = await kv.get(`reputation:${cleanHandle}`);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        ...cached,
+        source: 'cache'
       });
     }
 
-    const score = scoreResult[0];
+    // Check if Postgres is configured
+    if (!isPostgresEnabled()) {
+      // Return default tier with activity-based scoring from KV
+      const activityScore = await calculateActivityScore(cleanHandle);
+      const tier = getTierForScore(activityScore);
 
-    // Get user's badges
-    const badgesResult = await sql`
-      SELECT b.badge_id, b.name, b.description, b.icon, b.category, b.rarity
-      FROM badge_awards ba
-      JOIN badges b ON ba.badge_id = b.badge_id
-      WHERE ba.handle = ${cleanHandle}
-      ORDER BY ba.awarded_at DESC
-    `;
+      const response = {
+        success: true,
+        handle: cleanHandle,
+        overall_score: activityScore,
+        tier: tier.tier,
+        scores: {
+          economic: 0,
+          social: activityScore,
+          expert: 0,
+          creator: 0
+        },
+        badges: [],
+        rank: null,
+        percentile: null,
+        next_tier: getNextTier(tier.tier)?.tier || null,
+        progress_to_next: calculateProgress(activityScore, tier),
+        points_needed: getNextTier(tier.tier) ? getNextTier(tier.tier).min - activityScore : 0,
+        tier_unlocks: DEFAULT_TIER.unlocks,
+        daily_budget: tier.daily_budget,
+        source: 'activity'
+      };
 
-    // Get current tier unlocks
-    const currentTierResult = await sql`
-      SELECT * FROM tier_requirements
-      WHERE tier = ${score.tier}
-    `;
+      // Cache for 5 minutes
+      await kv.set(`reputation:${cleanHandle}`, response, { ex: 300 });
 
-    const currentTier = currentTierResult[0];
-
-    // Get next tier
-    const nextTierResult = await sql`
-      SELECT * FROM tier_requirements
-      WHERE min_overall_score > ${score.overall_score}
-      ORDER BY min_overall_score ASC
-      LIMIT 1
-    `;
-
-    const nextTier = nextTierResult.length > 0 ? nextTierResult[0] : null;
-
-    // Calculate progress to next tier
-    let progressToNext = 1.0;
-    if (nextTier) {
-      const currentMin = currentTier.min_overall_score;
-      const nextMin = nextTier.min_overall_score;
-      const range = nextMin - currentMin;
-      const progress = score.overall_score - currentMin;
-      progressToNext = range > 0 ? progress / range : 0;
+      return res.status(200).json(response);
     }
 
-    // Get global rank
-    const rankResult = await sql`
-      SELECT COUNT(*) + 1 as rank
-      FROM reputation_scores
-      WHERE overall_score > ${score.overall_score}
-    `;
+    // Full Postgres path
+    const sql = getSQL();
 
-    const rank = parseInt(rankResult[0].rank);
+    try {
+      const scoreResult = await sql`
+        SELECT * FROM reputation_scores
+        WHERE handle = ${cleanHandle}
+      `;
 
-    // Get total users for percentile
-    const totalUsersResult = await sql`
-      SELECT COUNT(*) as total
-      FROM reputation_scores
-    `;
+      if (scoreResult.length === 0) {
+        // User not in reputation table yet - return default
+        const activityScore = await calculateActivityScore(cleanHandle);
+        const tier = getTierForScore(activityScore);
 
-    const totalUsers = parseInt(totalUsersResult[0].total);
-    const percentile = totalUsers > 0 ? (1 - (rank - 1) / totalUsers) * 100 : 100;
+        return res.status(200).json({
+          success: true,
+          handle: cleanHandle,
+          overall_score: activityScore,
+          tier: tier.tier,
+          scores: { economic: 0, social: activityScore, expert: 0, creator: 0 },
+          badges: [],
+          rank: null,
+          next_tier: getNextTier(tier.tier)?.tier || null,
+          progress_to_next: calculateProgress(activityScore, tier),
+          daily_budget: tier.daily_budget,
+          message: 'Keep participating to earn reputation!',
+          source: 'default'
+        });
+      }
 
-    return res.status(200).json({
-      success: true,
-      handle,
-      overall_score: score.overall_score,
-      tier: score.tier,
-      scores: {
-        economic: score.economic_score,
-        social: score.social_score,
-        expert: score.expert_score,
-        creator: score.creator_score
-      },
-      badges: badgesResult.map(b => ({
-        id: b.badge_id,
-        name: b.name,
-        description: b.description,
-        icon: b.icon,
-        category: b.category,
-        rarity: b.rarity
-      })),
-      rank,
-      percentile: parseFloat(percentile.toFixed(2)),
-      total_users: totalUsers,
-      next_tier: nextTier ? nextTier.tier : null,
-      progress_to_next: parseFloat(progressToNext.toFixed(4)),
-      points_needed: nextTier ? nextTier.min_overall_score - score.overall_score : 0,
-      tier_unlocks: currentTier.unlocks,
-      tier_unlocked_at: score.tier_unlocked_at ? new Date(score.tier_unlocked_at).toISOString() : null
-    });
+      const score = scoreResult[0];
+
+      // Get badges
+      let badges = [];
+      try {
+        const badgesResult = await sql`
+          SELECT b.badge_id, b.name, b.description, b.icon, b.category, b.rarity
+          FROM badge_awards ba
+          JOIN badges b ON ba.badge_id = b.badge_id
+          WHERE ba.handle = ${cleanHandle}
+          ORDER BY ba.awarded_at DESC
+        `;
+        badges = badgesResult.map(b => ({
+          id: b.badge_id,
+          name: b.name,
+          description: b.description,
+          icon: b.icon,
+          category: b.category,
+          rarity: b.rarity
+        }));
+      } catch (e) {
+        // Badges table might not exist
+      }
+
+      const tier = getTierForScore(score.overall_score);
+      const nextTier = getNextTier(tier.tier);
+
+      return res.status(200).json({
+        success: true,
+        handle: cleanHandle,
+        overall_score: score.overall_score,
+        tier: score.tier || tier.tier,
+        scores: {
+          economic: score.economic_score || 0,
+          social: score.social_score || 0,
+          expert: score.expert_score || 0,
+          creator: score.creator_score || 0
+        },
+        badges,
+        next_tier: nextTier?.tier || null,
+        progress_to_next: calculateProgress(score.overall_score, tier),
+        points_needed: nextTier ? nextTier.min - score.overall_score : 0,
+        daily_budget: tier.daily_budget,
+        source: 'postgres'
+      });
+
+    } catch (dbError) {
+      // Database query failed (table doesn't exist, etc.)
+      console.error('[Reputation] DB error:', dbError.message);
+
+      // Fallback to activity-based scoring
+      const activityScore = await calculateActivityScore(cleanHandle);
+      const tier = getTierForScore(activityScore);
+
+      return res.status(200).json({
+        success: true,
+        handle: cleanHandle,
+        overall_score: activityScore,
+        tier: tier.tier,
+        scores: { economic: 0, social: activityScore, expert: 0, creator: 0 },
+        badges: [],
+        next_tier: getNextTier(tier.tier)?.tier || null,
+        progress_to_next: calculateProgress(activityScore, tier),
+        daily_budget: tier.daily_budget,
+        source: 'fallback'
+      });
+    }
 
   } catch (error) {
     console.error('[Reputation] Score error:', error);
@@ -159,4 +202,57 @@ module.exports = async function handler(req, res) {
       details: error.message
     });
   }
-};
+}
+
+// Calculate activity score from KV data (messages, presence, ships)
+async function calculateActivityScore(handle) {
+  let score = 0;
+
+  try {
+    // Check presence activity
+    const presence = await kv.get(`presence:${handle}`);
+    if (presence) {
+      score += 10; // Has set up presence
+      if (presence.workingOn) score += 5; // Has a project description
+    }
+
+    // Check message activity (rough estimate)
+    const threads = await kv.smembers(`threads:${handle}`) || [];
+    score += Math.min(threads.length * 5, 50); // Up to 50 points for messaging
+
+    // Check ships/posts
+    const posts = await kv.lrange(`board:user:${handle}`, 0, 20) || [];
+    score += Math.min(posts.length * 10, 100); // Up to 100 points for shipping
+
+  } catch (e) {
+    // KV errors shouldn't break the response
+  }
+
+  return score;
+}
+
+function getTierForScore(score) {
+  for (let i = TIER_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (score >= TIER_THRESHOLDS[i].min) {
+      return TIER_THRESHOLDS[i];
+    }
+  }
+  return TIER_THRESHOLDS[0];
+}
+
+function getNextTier(currentTier) {
+  const idx = TIER_THRESHOLDS.findIndex(t => t.tier === currentTier);
+  if (idx >= 0 && idx < TIER_THRESHOLDS.length - 1) {
+    return TIER_THRESHOLDS[idx + 1];
+  }
+  return null;
+}
+
+function calculateProgress(score, currentTier) {
+  const next = getNextTier(currentTier.tier);
+  if (!next) return 1.0;
+
+  const range = next.min - currentTier.min;
+  const progress = score - currentTier.min;
+  return range > 0 ? Math.min(progress / range, 1.0) : 0;
+}

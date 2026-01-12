@@ -1,8 +1,9 @@
 /**
  * POST /api/payments/tip
  *
- * Instant peer-to-peer payment via X402 Micropayments
- * Waits for blockchain confirmation (~3 seconds)
+ * Social tipping - record appreciation between users
+ * MVP: Stored in KV as social proof (no blockchain yet)
+ * Future: Will integrate with X402 Micropayments
  *
  * Request:
  * {
@@ -11,251 +12,192 @@
  *   "amount": 5,
  *   "message": "Thanks for the help!"
  * }
- *
- * Response:
- * {
- *   "success": true,
- *   "tx_hash": "0xabc123...",
- *   "status": "confirmed",
- *   "amount": 5,
- *   "fee": 0.125,
- *   "net_to_recipient": 4.875
- * }
  */
 
-const { getDispatcher } = require('../../lib/cdp/contract-dispatcher');
-const { sql } = require('../lib/db');
-const crypto = require('crypto');
+import { kv } from '@vercel/kv';
+import crypto from 'crypto';
 
-// Helper to get or create wallet (placeholder - will use actual implementation)
-async function ensureWallet(handle, context) {
-  // This should import from lib/cdp/wallet-helpers once it's available
-  // For now, just return a placeholder
-  const cleanHandle = handle.replace('@', '');
+// Fee percentage (will apply when real payments enabled)
+const TIP_FEE_PERCENT = 2.5;
 
-  // Get wallet address from database
-  const result = await sql`
-    SELECT wallet_address FROM users WHERE username = ${cleanHandle}
-  `;
-
-  if (result.length === 0 || !result[0].wallet_address) {
-    throw new Error(`No wallet for ${handle}. User needs to create wallet first.`);
-  }
-
-  return result[0].wallet_address;
-}
-
-// Helper to get wallet balance (placeholder)
-async function getBalance(handle) {
-  // This should call the actual balance checker
-  // For now, return a placeholder value
-  return 100; // $100 placeholder
-}
-
-// Simple auth check (placeholder)
-function requireAuth(req, handle) {
-  // For MVP, we can use a simple token check
-  // In production, use proper JWT validation
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return { authenticated: false, error: 'Missing Authorization header' };
-  }
-
-  // TODO: Implement proper auth validation
-  return { authenticated: true };
-}
-
-// Rate limit check (placeholder)
-async function checkRateLimit(kv, type, handle) {
-  // For MVP, allow 10 tips per hour
-  return {
-    success: true,
-    remaining: 9,
-    reset: Date.now() + 3600000
-  };
-}
-
-function setRateLimitHeaders(res, rateInfo) {
-  res.setHeader('X-RateLimit-Remaining', rateInfo.remaining || 0);
-  res.setHeader('X-RateLimit-Reset', rateInfo.reset || Date.now());
-}
-
-function rateLimitResponse(res, rateInfo) {
-  setRateLimitHeaders(res, rateInfo);
-  return res.status(429).json({
-    error: 'Rate limit exceeded',
-    remaining: 0,
-    reset_at: new Date(rateInfo.reset).toISOString()
-  });
-}
-
-module.exports = async function handler(req, res) {
-  // CORS
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  // GET - retrieve tip history
+  if (req.method === 'GET') {
+    return handleGet(req, res);
   }
 
+  // POST - send a tip
+  if (req.method === 'POST') {
+    return handlePost(req, res);
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function handleGet(req, res) {
+  const { handle, type } = req.query;
+
+  if (!handle) {
+    return res.status(400).json({ error: 'Missing handle parameter' });
+  }
+
+  const cleanHandle = handle.replace('@', '').toLowerCase();
+
+  try {
+    // Get tips sent by user
+    const sent = await kv.lrange(`tips:sent:${cleanHandle}`, 0, 50) || [];
+
+    // Get tips received by user
+    const received = await kv.lrange(`tips:received:${cleanHandle}`, 0, 50) || [];
+
+    // Get totals
+    const totalSent = await kv.get(`tips:total:sent:${cleanHandle}`) || 0;
+    const totalReceived = await kv.get(`tips:total:received:${cleanHandle}`) || 0;
+
+    return res.json({
+      success: true,
+      handle: cleanHandle,
+      sent: type === 'received' ? [] : sent.map(t => JSON.parse(t)),
+      received: type === 'sent' ? [] : received.map(t => JSON.parse(t)),
+      totals: {
+        sent: totalSent,
+        received: totalReceived,
+        net: totalReceived - totalSent
+      }
+    });
+
+  } catch (error) {
+    console.error('[Tip] Get error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function handlePost(req, res) {
   try {
     const { from, to, amount, message } = req.body;
 
     // Validation
-    if (!from || !to || !amount) {
+    if (!from || !to) {
       return res.status(400).json({
-        error: 'Missing required fields: from, to, amount'
+        error: 'Missing required fields: from, to'
       });
     }
 
-    if (amount <= 0 || amount > 100) {
+    const tipAmount = parseFloat(amount) || 1; // Default to $1 if not specified
+
+    if (tipAmount <= 0 || tipAmount > 100) {
       return res.status(400).json({
         error: 'Amount must be between $0.01 and $100'
       });
     }
 
-    // Auth
-    const auth = requireAuth(req, from);
-    if (!auth.authenticated) {
-      return res.status(401).json({ error: auth.error });
-    }
+    const fromClean = from.replace('@', '').toLowerCase();
+    const toClean = to.replace('@', '').toLowerCase();
 
-    // Rate limit
-    const { kv } = await import('@vercel/kv');
-    const rateInfo = await checkRateLimit(kv, 'tip', from.replace('@', ''));
-    if (!rateInfo.success) {
-      return rateLimitResponse(res, rateInfo);
-    }
-    setRateLimitHeaders(res, rateInfo);
-
-    // Ensure wallets exist
-    const fromWallet = await ensureWallet(from, 'tip_payment');
-    const toWallet = await ensureWallet(to, 'tip_receive');
-
-    // Check balance
-    const balance = await getBalance(from);
-    if (balance < amount) {
+    if (fromClean === toClean) {
       return res.status(400).json({
-        error: 'Insufficient balance',
-        balance: `$${balance.toFixed(2)}`,
-        needed: `$${amount.toFixed(2)}`
+        error: "Can't tip yourself!"
       });
     }
 
-    // Get wallet data from KV
-    const fromWalletData = await kv.get(`wallet:${from.replace('@', '')}`);
-    if (!fromWalletData) {
-      return res.status(500).json({
-        error: 'Wallet data not found. Please recreate wallet.'
+    // Rate limiting - max 20 tips per hour per user
+    const rateKey = `tip:ratelimit:${fromClean}`;
+    const tipCount = await kv.incr(rateKey);
+    if (tipCount === 1) {
+      await kv.expire(rateKey, 3600); // 1 hour TTL
+    }
+    if (tipCount > 20) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded. Max 20 tips per hour.',
+        reset_in: await kv.ttl(rateKey)
       });
     }
 
-    // Generate request ID
-    const requestId = crypto.randomBytes(16).toString('hex');
+    // Generate tip ID
+    const tipId = `tip_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const fee = tipAmount * (TIP_FEE_PERCENT / 100);
+    const netAmount = tipAmount - fee;
 
-    // Call dispatcher (WAITS for confirmation)
-    const dispatcher = getDispatcher();
-    const result = await dispatcher.tip({
-      from,
-      to,
-      amount,
-      message,
-      requestId,
-      fromWalletData: fromWalletData,
-      toAddress: toWallet
-    });
+    const tipRecord = {
+      id: tipId,
+      from: fromClean,
+      to: toClean,
+      amount: tipAmount,
+      fee: fee,
+      net: netAmount,
+      message: message || null,
+      timestamp: Date.now(),
+      status: 'recorded', // 'recorded' = social only, 'confirmed' = blockchain confirmed
+      mode: 'social' // Will be 'blockchain' when real payments enabled
+    };
 
-    // Log to database - sender side
-    await sql`
-      INSERT INTO wallet_events (
-        handle,
-        event_type,
-        wallet_address,
-        amount,
-        transaction_hash,
-        tx_status,
-        tx_confirmation_time,
-        metadata
-      ) VALUES (
-        ${from.replace('@', '')},
-        'tip_sent',
-        ${fromWallet},
-        ${amount},
-        ${result.tx_hash},
-        'confirmed',
-        NOW(),
-        ${JSON.stringify({
-          to: to.replace('@', ''),
-          message,
-          requestId,
-          fee: result.fee,
-          contract: 'X402Micropayments'
-        })}
-      )
-    `;
+    // Store tip in both users' histories
+    await Promise.all([
+      kv.lpush(`tips:sent:${fromClean}`, JSON.stringify(tipRecord)),
+      kv.lpush(`tips:received:${toClean}`, JSON.stringify(tipRecord)),
+      kv.incrbyfloat(`tips:total:sent:${fromClean}`, tipAmount),
+      kv.incrbyfloat(`tips:total:received:${toClean}`, netAmount),
+      kv.lpush('tips:global', JSON.stringify(tipRecord))
+    ]);
 
-    // Log recipient side
-    await sql`
-      INSERT INTO wallet_events (
-        handle,
-        event_type,
-        wallet_address,
-        amount,
-        transaction_hash,
-        tx_status,
-        tx_confirmation_time,
-        metadata
-      ) VALUES (
-        ${to.replace('@', '')},
-        'tip_received',
-        ${toWallet},
-        ${amount - result.fee},
-        ${result.tx_hash},
-        'confirmed',
-        NOW(),
-        ${JSON.stringify({
-          from: from.replace('@', ''),
-          message,
-          requestId
-        })}
-      )
-    `;
+    // Trim histories to last 100
+    await Promise.all([
+      kv.ltrim(`tips:sent:${fromClean}`, 0, 99),
+      kv.ltrim(`tips:received:${toClean}`, 0, 99),
+      kv.ltrim('tips:global', 0, 999)
+    ]);
 
-    // Notify recipient via DM (async, don't block)
-    const vercelUrl = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
-    if (vercelUrl) {
-      fetch(`https://${vercelUrl}/api/messages/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: 'system',
-          to,
-          text: `💰 ${from} tipped you $${amount}!${message ? ` "${message}"` : ''}\n\nCheck your wallet: vibe wallet`
-        })
-      }).catch(e => console.error('DM notification failed:', e));
+    // Award reputation points (async, don't block)
+    try {
+      // Tipper gets social points
+      await kv.incr(`reputation:social:${fromClean}`);
+      // Receiver gets economic points
+      await kv.incr(`reputation:economic:${toClean}`);
+    } catch (e) {
+      // Non-fatal
     }
+
+    // Notify recipient via DM (async)
+    const apiUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'https://slashvibe.dev';
+
+    fetch(`${apiUrl}/api/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'system',
+        to: toClean,
+        text: `💰 @${fromClean} tipped you $${tipAmount}!${message ? ` "${message}"` : ''}\n\n_Tips are currently symbolic. Real payments coming soon!_`
+      })
+    }).catch(() => {}); // Ignore DM failures
+
+    console.log(`[Tip] ${fromClean} → ${toClean}: $${tipAmount}`);
 
     return res.status(200).json({
       success: true,
-      tx_hash: result.tx_hash,
-      status: 'confirmed',
-      amount,
-      fee: result.fee,
-      net_to_recipient: amount - result.fee,
-      message: `Tipped ${to} $${amount}!`
+      tip_id: tipId,
+      status: 'recorded',
+      amount: tipAmount,
+      fee: fee,
+      net_to_recipient: netAmount,
+      message: `Tipped @${toClean} $${tipAmount}!`,
+      note: 'Tips are currently symbolic (social proof). Real USDC payments coming soon!'
     });
 
   } catch (error) {
-    console.error('[TIP] Error:', error);
+    console.error('[Tip] Error:', error);
     return res.status(500).json({
       error: 'Tip failed',
       details: error.message
     });
   }
-};
+}
