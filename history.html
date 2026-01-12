@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History — /vibe</title>
+    <meta name="description" content="Where /vibe comes from. The early internet feeling we're trying to recapture.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+            background: #0A0A0A;
+            color: #fff;
+            min-height: 100vh;
+            padding: 48px 20px;
+            line-height: 1.7;
+        }
+        .container { max-width: 640px; margin: 0 auto; }
+
+        a { color: #6B8FFF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .back {
+            display: inline-block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 32px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 42px;
+            font-weight: 400;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #6B8FFF;
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            padding-top: 24px;
+            border-top: 1px solid #222;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 400;
+            color: #fff;
+            margin-top: 32px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 15px;
+            color: #ccc;
+            margin-bottom: 16px;
+        }
+
+        .highlight {
+            color: #fff;
+            background: #6B8FFF15;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .quote {
+            border-left: 2px solid #6B8FFF;
+            padding-left: 20px;
+            margin: 24px 0;
+            font-style: italic;
+            color: #999;
+        }
+
+        .person-card {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .person-name {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .person-role {
+            font-size: 12px;
+            color: #6B8FFF;
+            margin-bottom: 12px;
+        }
+
+        .person-insight {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 24px;
+            margin: 32px 0;
+        }
+
+        .timeline:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 8px;
+            bottom: 8px;
+            width: 1px;
+            background: #333;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+
+        .timeline-item:before {
+            content: "";
+            position: absolute;
+            left: -27px;
+            top: 6px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #6B8FFF;
+        }
+
+        .timeline-year {
+            font-size: 12px;
+            color: #6B8FFF;
+            margin-bottom: 4px;
+        }
+
+        .timeline-title {
+            font-size: 15px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .timeline-desc {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .lesson {
+            background: #111;
+            border-left: 2px solid #6B8FFF;
+            padding: 16px 20px;
+            margin: 24px 0;
+        }
+
+        .lesson-label {
+            font-size: 10px;
+            color: #6B8FFF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .lesson-text {
+            font-size: 14px;
+            color: #ccc;
+            margin: 0;
+        }
+
+        .principles {
+            display: grid;
+            gap: 16px;
+            margin: 32px 0;
+        }
+
+        .principle {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .principle-title {
+            font-size: 14px;
+            color: #6B8FFF;
+            margin-bottom: 8px;
+        }
+
+        .principle-desc {
+            font-size: 13px;
+            color: #888;
+            margin: 0;
+        }
+
+        .footer {
+            margin-top: 64px;
+            padding-top: 24px;
+            border-top: 1px solid #222;
+            font-size: 12px;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back">&larr; Back to /vibe</a>
+
+        <h1>Where /vibe Comes From</h1>
+        <p class="subtitle">The early internet feeling we're trying to recapture.</p>
+
+        <p>
+            Remember when going online felt like walking into a room full of
+            interesting people who were excited to meet you?
+        </p>
+
+        <p>
+            Before the feeds. Before the algorithms. Before the engagement metrics.
+            Before the platforms learned that outrage drives attention.
+        </p>
+
+        <p>
+            That's the vibe.
+        </p>
+
+        <h2>The Inspirations</h2>
+
+        <div class="person-card">
+            <div class="person-name">James Gleick</div>
+            <div class="person-role">The Pipeline (1985)</div>
+            <div class="person-insight">
+                One of the first online services. Curated content, editorial voice,
+                community of intellectuals. Exclusive by culture, not by mechanism.
+            </div>
+        </div>
+
+        <div class="person-card">
+            <div class="person-name">Ted Nelson</div>
+            <div class="person-role">Project Xanadu (1960s-present)</div>
+            <div class="person-insight">
+                The original vision of hypertext: two-way links, credit flowing to
+                creators, nothing ever lost. The most ambitious computing vision
+                was about access, not restriction.
+            </div>
+        </div>
+
+        <div class="person-card">
+            <div class="person-name">Ted Leonsis</div>
+            <div class="person-role">AOL Community Strategy (1994)</div>
+            <div class="person-insight">
+                "Content is king, but community is king kong." Invented the
+                concept of community "hosts" — party hosts, not bouncers.
+                Made the internet feel like home.
+            </div>
+        </div>
+
+        <div class="person-card">
+            <div class="person-name">Steve Case</div>
+            <div class="person-role">AOL (1985-2000)</div>
+            <div class="person-insight">
+                250 million discs distributed. But the magic wasn't ubiquity —
+                it was "You've Got Mail." Intimate connection at massive scale.
+            </div>
+        </div>
+
+        <h2>The Timeline</h2>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-year">1985</div>
+                <div class="timeline-title">The WELL launches</div>
+                <div class="timeline-desc">Real names, accountability, quality discourse. "You own your own words."</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-year">1995</div>
+                <div class="timeline-title">AOL hits 5 million members</div>
+                <div class="timeline-desc">The sound of a modem connecting. The anticipation of "You've Got Mail."</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-year">2004</div>
+                <div class="timeline-title">Gmail goes invite-only</div>
+                <div class="timeline-desc">Stays that way for 3 years. Scarcity was authentic — server constraints, not marketing.</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-year">2004</div>
+                <div class="timeline-title">Facebook launches at Harvard</div>
+                <div class="timeline-desc">Then Ivy League. Then colleges. Each wave added value to the previous.</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-year">2010s</div>
+                <div class="timeline-title">The platform era</div>
+                <div class="timeline-desc">Engagement metrics. Algorithmic feeds. Outrage as business model. The vibe dies.</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-year">2024</div>
+                <div class="timeline-title">Claude Code ships</div>
+                <div class="timeline-desc">AI becomes conversational. Builders spend hours in terminal sessions. Alone.</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-year">2026</div>
+                <div class="timeline-title">/vibe launches</div>
+                <div class="timeline-desc">The terminal just got multiplayer. Let's bring back the feeling.</div>
+            </div>
+        </div>
+
+        <h2>What We Learned</h2>
+
+        <div class="lesson">
+            <div class="lesson-label">From The WELL</div>
+            <p class="lesson-text">
+                Culture is the moat. The barrier wasn't access — it was "are you the
+                kind of person who values thoughtful conversation?"
+            </p>
+        </div>
+
+        <div class="lesson">
+            <div class="lesson-label">From AOL</div>
+            <p class="lesson-text">
+                Hosts, not bouncers. The disc got you in, but the community managers
+                kept you there. They were called "hosts" for a reason.
+            </p>
+        </div>
+
+        <div class="lesson">
+            <div class="lesson-label">From Gmail</div>
+            <p class="lesson-text">
+                Authentic scarcity. Google never manufactured urgency. The product
+                was so good that people didn't resent the wait.
+            </p>
+        </div>
+
+        <div class="lesson">
+            <div class="lesson-label">From Facebook</div>
+            <p class="lesson-text">
+                Cohort expansion. Each wave should want what the previous wave has.
+                Aspirational, not exclusionary.
+            </p>
+        </div>
+
+        <h2>What We're Building</h2>
+
+        <div class="principles">
+            <div class="principle">
+                <div class="principle-title">Jazz Session, Not Competition</div>
+                <p class="principle-desc">
+                    The best sessions happen when the right players show up.
+                    Everyone contributes. Everyone listens.
+                </p>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Terminal Party, Not Velvet Rope</div>
+                <p class="principle-desc">
+                    Everyone's invited. You just need to know someone who's already there.
+                    Our founding members are hosts, not bouncers.
+                </p>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Early Internet, Not Late Capitalism</div>
+                <p class="principle-desc">
+                    No engagement metrics. No algorithmic feeds. No ads.
+                    Just people building things and talking about it.
+                </p>
+            </div>
+        </div>
+
+        <p class="quote">
+            "The best communities were built on care, not hype. On culture, not exclusivity.
+            On generosity, not scarcity. That's what we're trying to do."
+        </p>
+
+        <div class="footer">
+            <p>/vibe — Social layer for Claude Code</p>
+            <p><a href="/">slashvibe.dev</a> &middot; <a href="/why-invites">Why Invites?</a> &middot; <a href="https://github.com/brightseth/vibe">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>

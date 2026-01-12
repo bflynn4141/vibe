@@ -60,7 +60,7 @@
     { "source": "/community", "destination": "/community.html" },
     { "source": "/skills", "destination": "/skills.html" },
     { "source": "/alpha", "destination": "/alpha.html" },
-    { "source": "/why-invites", "destination": "/public/why-invites.html" },
-    { "source": "/history", "destination": "/public/history.html" }
+    { "source": "/why-invites", "destination": "/why-invites.html" },
+    { "source": "/history", "destination": "/history.html" }
   ]
 }
