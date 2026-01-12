@@ -12,6 +12,13 @@
 
 import { kv } from '@vercel/kv';
 
+// System accounts to filter from leaderboard
+const SYSTEM_ACCOUNTS = new Set([
+  'vibe', 'system', 'solienne', 'scout', 'echo', 'test', 'admin',
+  'health-check', 'testuser', 'testuser123', 'curltest',
+  'test_migration_check', 'test_cap_check_xyz'
+]);
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=60');
@@ -31,6 +38,9 @@ export default async function handler(req, res) {
     const leaderboard = [];
 
     for (const [handle, record] of Object.entries(handles)) {
+      // Skip system accounts
+      if (SYSTEM_ACCOUNTS.has(handle)) continue;
+
       let data;
       try {
         data = typeof record === 'string' ? JSON.parse(record) : record;

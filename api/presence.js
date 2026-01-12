@@ -18,6 +18,12 @@ const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_
 // Presence TTL in seconds (5 minutes - auto-expires inactive users)
 const PRESENCE_TTL = 300;
 
+// System accounts to filter from "active" lists (bots, bridges, test accounts)
+const SYSTEM_ACCOUNTS = new Set([
+  'vibe', 'system', 'solienne', 'scout', 'echo', 'test', 'admin',
+  'health-check', 'testuser', 'testuser123', 'curltest'
+]);
+
 // In-memory fallback with seed data
 let memoryPresence = {
   sethgoldstein: {
@@ -214,21 +220,28 @@ export default async function handler(req, res) {
       }))
       .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
 
-    // Separate by status
-    const active = list.filter(p => p.status === 'active');
-    const away = list.filter(p => p.status === 'away');
-    const offline = list.filter(p => p.status === 'offline');
+    // Filter out system accounts (bots, bridges, test users)
+    const humanList = list.filter(p => !SYSTEM_ACCOUNTS.has(p.username));
+    const systemList = list.filter(p => SYSTEM_ACCOUNTS.has(p.username));
+
+    // Separate by status (humans only in main lists)
+    const active = humanList.filter(p => p.status === 'active');
+    const away = humanList.filter(p => p.status === 'away');
+    const offline = humanList.filter(p => p.status === 'offline');
 
     return res.status(200).json({
       success: true,
       active,
       away,
       offline,
+      // System accounts shown separately (for debugging)
+      systemAccounts: systemList.filter(p => p.status === 'active'),
       yourMatches: [],
       counts: {
         active: active.length,
         away: away.length,
-        total: list.length
+        total: humanList.length,
+        systemOnline: systemList.filter(p => p.status === 'active').length
       },
       storage: KV_CONFIGURED ? 'kv' : 'memory'
     });
