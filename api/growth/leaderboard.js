@@ -31,7 +31,13 @@ export default async function handler(req, res) {
     const leaderboard = [];
 
     for (const [handle, record] of Object.entries(handles)) {
-      const data = typeof record === 'string' ? JSON.parse(record) : record;
+      let data;
+      try {
+        data = typeof record === 'string' ? JSON.parse(record) : record;
+      } catch (parseErr) {
+        console.error(`[leaderboard] Failed to parse record for ${handle}:`, record);
+        continue; // Skip malformed records
+      }
 
       // Count successful invites
       const inviteCodes = await kv.smembers(`vibe:invites:by:${handle}`) || [];
