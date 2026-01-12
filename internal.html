@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Dashboard — /vibe</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+            background: #0A0A0A;
+            color: #E0E0E0;
+            min-height: 100vh;
+            padding: 48px 20px;
+            line-height: 1.6;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+
+        a { color: #6B8FFF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 48px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #222;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 400;
+            letter-spacing: -1px;
+            color: #fff;
+        }
+
+        .internal-badge {
+            background: #6B8FFF22;
+            color: #6B8FFF;
+            font-size: 10px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: #0d0d0d;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.15s;
+        }
+
+        .card:hover {
+            border-color: #6B8FFF44;
+            background: #111;
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .card-link {
+            font-size: 11px;
+            color: #6B8FFF;
+        }
+
+        .card-meta {
+            font-size: 10px;
+            color: #444;
+            margin-top: 8px;
+        }
+
+        .featured {
+            border-color: #6B8FFF33;
+            background: linear-gradient(135deg, #0d1420 0%, #0d0d0d 100%);
+        }
+
+        .list-section {
+            background: #0d0d0d;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-title {
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .list-item-link {
+            font-size: 11px;
+            color: #6B8FFF;
+        }
+
+        .external-badge {
+            display: inline-block;
+            background: #333;
+            color: #888;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        .quick-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .quick-link {
+            background: #111;
+            border: 1px solid #222;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #888;
+            transition: all 0.15s;
+        }
+
+        .quick-link:hover {
+            border-color: #6B8FFF44;
+            color: #6B8FFF;
+            text-decoration: none;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-live { background: #22c55e; }
+        .status-draft { background: #f59e0b; }
+        .status-internal { background: #6B8FFF; }
+
+        .footer {
+            margin-top: 64px;
+            padding-top: 24px;
+            border-top: 1px solid #222;
+            font-size: 12px;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px; }
+            .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .card-grid { grid-template-columns: 1fr; }
+            .quick-links { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>/vibe Internal</h1>
+            <span class="internal-badge">Team Only</span>
+        </div>
+
+        <div class="quick-links">
+            <a href="/" class="quick-link">Public Site</a>
+            <a href="/status" class="quick-link">API Status</a>
+            <a href="/dashboard" class="quick-link">User Dashboard</a>
+            <a href="https://github.com/brightseth/vibe" class="quick-link">GitHub</a>
+            <a href="https://discord.gg/Hgu9emgP" class="quick-link">Discord</a>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Strategy & Vision</div>
+            <div class="card-grid">
+                <a href="/arc" class="card featured">
+                    <div class="card-title"><span class="status-dot status-internal"></span>The Arc</div>
+                    <div class="card-desc">Evolution of Internet Information Services: BBS to AGI. The systematic UI/UX review that positions /vibe.</div>
+                    <div class="card-link">Read document →</div>
+                    <div class="card-meta">~7,000 words · Jan 2026</div>
+                </a>
+                <a href="/why-invites" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Why Invites?</div>
+                    <div class="card-desc">Philosophy of invite-only. "Hosts, not bouncers." Terminal Party positioning.</div>
+                    <div class="card-link">View page →</div>
+                    <div class="card-meta">Public · Live</div>
+                </a>
+                <a href="/history" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>History</div>
+                    <div class="card-desc">Where /vibe comes from. The WELL → AOL → Gmail → /vibe lineage.</div>
+                    <div class="card-link">View page →</div>
+                    <div class="card-meta">Public · Live</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Manus Decks</div>
+            <div class="card-grid">
+                <a href="https://manus.im/app/78Rqign33nm49Z8V41pmdV" class="card" target="_blank">
+                    <div class="card-title">Origin of Vibe<span class="external-badge">External</span></div>
+                    <div class="card-desc">1995→2025 pattern. Swiss Helvetica style.</div>
+                    <div class="card-link">Open in Manus →</div>
+                </a>
+                <a href="https://manus.im/app/gRpfjt2aZvbmckbJS7wDBa" class="card" target="_blank">
+                    <div class="card-title">Investor Pitch<span class="external-badge">External</span></div>
+                    <div class="card-desc">21 slides. "Roblox for grownups" positioning.</div>
+                    <div class="card-link">Open in Manus →</div>
+                </a>
+                <a href="https://manus.im/app/bz29w23bkcQVq8PLKhxUjq" class="card" target="_blank">
+                    <div class="card-title">Entity Formation<span class="external-badge">External</span></div>
+                    <div class="card-desc">Cap table, Fred Wilson structure.</div>
+                    <div class="card-link">Open in Manus →</div>
+                </a>
+                <a href="https://manus.im/app/5EV375pGehDWcPSVTMyPME" class="card" target="_blank">
+                    <div class="card-title">Agent Economics<span class="external-badge">External</span></div>
+                    <div class="card-desc">Retro terminal infographic style.</div>
+                    <div class="card-link">Open in Manus →</div>
+                </a>
+                <a href="https://manus.im/app/aLQPEXTFtWP8iqeWf7Fjxu" class="card" target="_blank">
+                    <div class="card-title">Economic Flywheel<span class="external-badge">External</span></div>
+                    <div class="card-desc">Value flow visualization.</div>
+                    <div class="card-link">Open in Manus →</div>
+                </a>
+                <a href="https://manus.im/app/TQy7xqFUFBMMRuy22UeVns" class="card" target="_blank">
+                    <div class="card-title">Cognitive Archaeology<span class="external-badge">External</span></div>
+                    <div class="card-desc">6 months of AI building sessions.</div>
+                    <div class="card-link">Open in Manus →</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Brand & Design</div>
+            <div class="list-section">
+                <div class="list-item">
+                    <span class="list-item-title">Brand One-Pager</span>
+                    <span class="list-item-link">vibe-marketing/BRAND_ONE_PAGER.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">House Style Guide</span>
+                    <span class="list-item-link">vibe-platform/VIBE_HOUSE_STYLE.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Visual Documentation</span>
+                    <span class="list-item-link">vibe-platform/docs/VISUAL_DOCUMENTATION.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Economic Layer Infographics</span>
+                    <span class="list-item-link">vibe-platform/docs/images/economic-layer/</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Technical Documentation</div>
+            <div class="list-section">
+                <div class="list-item">
+                    <span class="list-item-title">Architecture Overview</span>
+                    <span class="list-item-link">vibe-platform/ARCHITECTURE.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Engineering Playbook</span>
+                    <span class="list-item-link">vibe-platform/ENGINEERING_PLAYBOOK.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Economic Layer (Full Spec)</span>
+                    <span class="list-item-link">vibe-platform/ECONOMIC_LAYER.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Economic Quickstart</span>
+                    <span class="list-item-link">vibe-platform/ECONOMIC_QUICKSTART.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">API Health Report</span>
+                    <span class="list-item-link">vibe-platform/API_HEALTH_REPORT.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Deployment Status</span>
+                    <span class="list-item-link">vibe-platform/DEPLOYMENT_STATUS.md</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Roadmap & Planning</div>
+            <div class="list-section">
+                <div class="list-item">
+                    <span class="list-item-title">Product Roadmap</span>
+                    <span class="list-item-link">vibe-platform/ROADMAP.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Vision: Vibe Services</span>
+                    <span class="list-item-link">vibe-platform/VISION_VIBE_SERVICES.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Incomplete Work Audit</span>
+                    <span class="list-item-link">vibe-platform/INCOMPLETE_WORK_AUDIT.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Cleanup Action Plan</span>
+                    <span class="list-item-link">vibe-platform/CLEANUP_ACTION_PLAN.md</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Session Intelligence</div>
+            <div class="list-section">
+                <div class="list-item">
+                    <span class="list-item-title">Marketing Session (Jan 12)</span>
+                    <span class="list-item-link">vibe-marketing/SESSION_SUMMARY_JAN_12_2026.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Marketing Session (Jan 11)</span>
+                    <span class="list-item-link">vibe-marketing/SESSION_SUMMARY_JAN_11_2026.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Platform Health Audit</span>
+                    <span class="list-item-link">vibe-platform/VIBE_HEALTH_AUDIT_JAN12_2026.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">Session Handoff (Jan 12)</span>
+                    <span class="list-item-link">vibe-platform/SESSION_HANDOFF_JAN12.md</span>
+                </div>
+                <div class="list-item">
+                    <span class="list-item-title">AGI Observations</span>
+                    <span class="list-item-link">vibe-platform/AGI_OBSERVATIONS_SESSION_JAN10.md</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Public Pages</div>
+            <div class="card-grid">
+                <a href="/" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Homepage</div>
+                    <div class="card-desc">Main landing page with install instructions and genesis counter.</div>
+                    <div class="card-link">slashvibe.dev →</div>
+                </a>
+                <a href="/community" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Community</div>
+                    <div class="card-desc">Community page with member highlights.</div>
+                    <div class="card-link">View page →</div>
+                </a>
+                <a href="/leaderboard" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Leaderboard</div>
+                    <div class="card-desc">Genesis rankings and stats.</div>
+                    <div class="card-link">View page →</div>
+                </a>
+                <a href="/chronicle" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Chronicle</div>
+                    <div class="card-desc">Activity feed and history.</div>
+                    <div class="card-link">View page →</div>
+                </a>
+                <a href="/skills" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Skills</div>
+                    <div class="card-desc">Available /vibe skills and tools.</div>
+                    <div class="card-link">View page →</div>
+                </a>
+                <a href="/docs" class="card">
+                    <div class="card-title"><span class="status-dot status-live"></span>Docs</div>
+                    <div class="card-desc">Developer documentation.</div>
+                    <div class="card-link">View page →</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">External Resources</div>
+            <div class="card-grid">
+                <a href="https://github.com/brightseth/vibe" class="card" target="_blank">
+                    <div class="card-title">GitHub<span class="external-badge">External</span></div>
+                    <div class="card-desc">Source code repository.</div>
+                    <div class="card-link">github.com/brightseth/vibe →</div>
+                </a>
+                <a href="https://discord.gg/Hgu9emgP" class="card" target="_blank">
+                    <div class="card-title">Discord<span class="external-badge">External</span></div>
+                    <div class="card-desc">Community Discord server.</div>
+                    <div class="card-link">Join server →</div>
+                </a>
+                <a href="https://airc.chat" class="card" target="_blank">
+                    <div class="card-title">AIRC Protocol<span class="external-badge">External</span></div>
+                    <div class="card-desc">The protocol /vibe implements.</div>
+                    <div class="card-link">airc.chat →</div>
+                </a>
+                <a href="https://vibecodings.vercel.app" class="card" target="_blank">
+                    <div class="card-title">Vibecodings<span class="external-badge">External</span></div>
+                    <div class="card-desc">Project portfolio. 57 projects.</div>
+                    <div class="card-link">vibecodings.vercel.app →</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span>/vibe Internal Dashboard · Updated January 2026</span>
+            <a href="/">Back to Public Site</a>
+        </div>
+    </div>
+</body>
+</html>

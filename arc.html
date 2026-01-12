@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arc — /vibe</title>
+    <meta name="description" content="Evolution of Internet Information Services: From BBS to AGI. The systematic review of UI/UX that led to /vibe.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+            background: #0A0A0A;
+            color: #E0E0E0;
+            min-height: 100vh;
+            padding: 48px 20px;
+            line-height: 1.8;
+        }
+        .container { max-width: 720px; margin: 0 auto; }
+
+        a { color: #6B8FFF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .back {
+            display: inline-block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 32px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .internal-badge {
+            display: inline-block;
+            background: #6B8FFF22;
+            color: #6B8FFF;
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 400;
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #6B8FFF;
+            margin-bottom: 8px;
+        }
+
+        .meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6B8FFF;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 64px;
+            margin-bottom: 24px;
+            padding-top: 32px;
+            border-top: 1px solid #222;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 400;
+            color: #fff;
+            margin-top: 40px;
+            margin-bottom: 16px;
+        }
+
+        h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            margin-top: 32px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 16px;
+        }
+
+        .thesis-box {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+            border: 1px solid #6B8FFF33;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+
+        .thesis-box .arc {
+            font-family: monospace;
+            font-size: 13px;
+            color: #6B8FFF;
+            background: #000;
+            padding: 16px;
+            border-radius: 4px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        .key-insight {
+            background: #111;
+            border-left: 3px solid #6B8FFF;
+            padding: 16px 20px;
+            margin: 24px 0;
+        }
+
+        .key-insight-label {
+            font-size: 10px;
+            color: #6B8FFF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .key-insight p {
+            margin: 0;
+            color: #fff;
+            font-size: 15px;
+        }
+
+        .era-card {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .era-name {
+            font-size: 14px;
+            color: #6B8FFF;
+            margin-bottom: 4px;
+        }
+
+        .era-years {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .era-desc {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .platform-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .platform {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .platform-name {
+            font-size: 13px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .platform-year {
+            font-size: 11px;
+            color: #6B8FFF;
+            margin-bottom: 8px;
+        }
+
+        .platform-note {
+            font-size: 11px;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #111;
+            color: #6B8FFF;
+            font-weight: 500;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #1a1a1a;
+            color: #ccc;
+        }
+
+        tr:hover td {
+            background: #0d0d0d;
+        }
+
+        .quote {
+            border-left: 2px solid #6B8FFF;
+            padding-left: 20px;
+            margin: 24px 0;
+            font-style: italic;
+            color: #888;
+        }
+
+        ul {
+            list-style: none;
+            margin: 16px 0;
+        }
+
+        li {
+            font-size: 13px;
+            color: #999;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        li:before {
+            content: ">";
+            position: absolute;
+            left: 0;
+            color: #6B8FFF;
+        }
+
+        .highlight {
+            color: #fff;
+            background: #6B8FFF15;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .synthesis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .synthesis-item {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .synthesis-title {
+            font-size: 12px;
+            color: #6B8FFF;
+            margin-bottom: 8px;
+        }
+
+        .synthesis-desc {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .final-thesis {
+            background: linear-gradient(135deg, #0a1628 0%, #0a0a0a 100%);
+            border: 2px solid #6B8FFF44;
+            border-radius: 12px;
+            padding: 32px;
+            margin: 48px 0;
+            text-align: center;
+        }
+
+        .final-thesis h3 {
+            color: #6B8FFF;
+            margin-bottom: 16px;
+        }
+
+        .final-thesis p {
+            font-size: 18px;
+            color: #fff;
+            margin: 0;
+        }
+
+        .toc {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+
+        .toc-title {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .toc a {
+            display: block;
+            padding: 8px 0;
+            font-size: 13px;
+            color: #888;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .toc a:last-child {
+            border-bottom: none;
+        }
+
+        .toc a:hover {
+            color: #6B8FFF;
+            text-decoration: none;
+        }
+
+        .footer {
+            margin-top: 64px;
+            padding-top: 24px;
+            border-top: 1px solid #222;
+            font-size: 12px;
+            color: #444;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px; }
+            h1 { font-size: 32px; }
+            .synthesis-grid { grid-template-columns: 1fr; }
+            .platform-list { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/internal" class="back">&larr; Internal Dashboard</a>
+
+        <span class="internal-badge">Internal Document</span>
+
+        <h1>The Arc</h1>
+        <p class="subtitle">Evolution of Internet Information Services</p>
+        <p class="meta">From BBS to AGI — A Systematic Review of UI/UX Evolution<br>Version 1.0 — January 2026</p>
+
+        <div class="thesis-box">
+            <p style="color: #fff; margin-bottom: 12px;"><strong>The Thesis</strong></p>
+            <p>The evolution of human-computer interaction for information services follows a cyclical arc:</p>
+            <div class="arc">CLI (command) → Menu (BBS) → GUI (desktop) → Browser (web) → Touch (mobile) → Feed (scroll) → CLI (AI-powered)</div>
+            <p style="margin-bottom: 0;">We've come full circle—but the new CLI is fundamentally different: <span class="highlight">natural language</span>, not memorized commands. <span class="highlight">AI as collaborator</span>, not tool.</p>
+        </div>
+
+        <div class="toc">
+            <div class="toc-title">Contents</div>
+            <a href="#era1">Part 1: The Age of Text (1969-1994)</a>
+            <a href="#era2">Part 2: The Browser Revolution (1994-2004)</a>
+            <a href="#era3">Part 3: The Social Graph (2004-2012)</a>
+            <a href="#era4">Part 4: The Algorithmic Age (2012-2022)</a>
+            <a href="#era5">Part 5: The Decentralized & AI Era (2022-Present)</a>
+            <a href="#synthesis">Part 6: The Synthesis</a>
+        </div>
+
+        <h2 id="era1">Part 1: The Age of Text (1969-1994)</h2>
+
+        <h3>The Primordial Networks</h3>
+        <p>Before the internet was a place, it was an experiment.</p>
+
+        <div class="platform-list">
+            <div class="platform">
+                <div class="platform-name">ARPANET</div>
+                <div class="platform-year">1969</div>
+                <div class="platform-note">First packet-switched network. Resilience built into architecture.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">PLATO</div>
+                <div class="platform-year">1960s-80s</div>
+                <div class="platform-note">First online community. Chat, forums, games on orange plasma displays.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">Usenet</div>
+                <div class="platform-year">1980</div>
+                <div class="platform-note">Distributed discussion groups. No central server—a true protocol.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">FidoNet</div>
+                <div class="platform-year">1984</div>
+                <div class="platform-note">BBS network. Hobbyist infrastructure, global reach.</div>
+            </div>
+        </div>
+
+        <h3>Bulletin Board Systems (BBS)</h3>
+        <p><strong>CBBS (1978)</strong> — Ward Christensen and Randy Suess created the first BBS in Chicago during a blizzard. The name was literal: a computerized bulletin board.</p>
+
+        <p>The BBS experience: dial in with a modem (the screech of connection), navigate text menus with single-key commands, read messages, download files, play "door games," view ANSI art.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>The SysOp Was the Algorithm</p>
+        </div>
+
+        <p>There was no algorithmic feed. The sysop decided what to host, what to allow, who could have an account. Moderation was personal, human, accountable. When the sysop went to bed, the BBS went down.</p>
+
+        <h3>Commercial Online Services</h3>
+
+        <div class="platform-list">
+            <div class="platform">
+                <div class="platform-name">CompuServe</div>
+                <div class="platform-year">1979-2001</div>
+                <div class="platform-note">SIGs, CB Simulator (first chat). 500K users by 1989.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">Prodigy</div>
+                <div class="platform-year">1984-2001</div>
+                <div class="platform-note">First graphical consumer service. Ads built in.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">The Pipeline</div>
+                <div class="platform-year">1993-1996</div>
+                <div class="platform-note">James Gleick's ISP. First with GUI. Boutique, intellectual.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">The WELL</div>
+                <div class="platform-year">1985-present</div>
+                <div class="platform-note">"You own your own words." Culture as moat.</div>
+            </div>
+        </div>
+
+        <h4>The WELL: "You Own Your Own Words"</h4>
+        <p>Founded by Stewart Brand and Larry Brilliant in San Francisco. The WELL never tried to be big. It tried to be good. Members were responsible for their posts. Quality over quantity.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Culture Is the Moat</p>
+        </div>
+
+        <h4>AOL: Mass Market Arrives</h4>
+        <p>Steve Case bet that online services would go mainstream. 250 million CDs mailed. "You've Got Mail" — three words that defined an era.</p>
+        <p>Ted Leonsis understood: "Content is king, but community is king kong."</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Hosts, Not Bouncers</p>
+        </div>
+
+        <p>AOL's community managers were called "hosts" for a reason. Their job wasn't to keep people out—it was to welcome people in.</p>
+
+        <h2 id="era2">Part 2: The Browser Revolution (1994-2004)</h2>
+
+        <h3>The Web Arrives</h3>
+        <p>Mosaic (1993), Netscape (1994), Internet Explorer (1995). Point and click replaced command lines. The browser became infrastructure.</p>
+
+        <h3>Portals & Directories</h3>
+        <p><strong>Yahoo! (1994)</strong> — Human-curated directory. The "portal" model tried to be your starting point for everything.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Curation Before Search</p>
+        </div>
+
+        <h3>Google Changes Everything</h3>
+        <p><strong>Google (1998)</strong> — PageRank turned the web's link structure into relevance signals. Radical minimalism: one search box, two buttons, white space.</p>
+
+        <p><strong>Gmail (2004)</strong> — 1GB storage (500x competitors). Invite-only for three years. Invites became social currency.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Authentic Scarcity</p>
+        </div>
+
+        <p>Google never manufactured urgency. Server constraints were real. The product was so good people didn't resent the wait.</p>
+
+        <h3>Classifieds & Marketplaces</h3>
+        <p><strong>Craigslist (1995)</strong> — Anti-design. Blue links, white background. Function over form. It looked like 1995 forever.</p>
+        <p><strong>eBay (1995)</strong> — Reputation systems. Star ratings that now pervade every platform started here.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Trust Systems Replace Physical Presence</p>
+        </div>
+
+        <h2 id="era3">Part 3: The Social Graph (2004-2012)</h2>
+
+        <h3>The Social Networks</h3>
+
+        <div class="platform-list">
+            <div class="platform">
+                <div class="platform-name">Friendster</div>
+                <div class="platform-year">2002</div>
+                <div class="platform-note">First mainstream social network. Couldn't handle the load.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">MySpace</div>
+                <div class="platform-year">2003</div>
+                <div class="platform-note">Customization, music, self-expression. Tom was everyone's first friend.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">Facebook</div>
+                <div class="platform-year">2004</div>
+                <div class="platform-note">Real identity, clean design, cohort expansion.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">Twitter</div>
+                <div class="platform-year">2006</div>
+                <div class="platform-note">140 characters. Public by default. The public square.</div>
+            </div>
+        </div>
+
+        <h3>The Feed Emerges</h3>
+        <p><strong>News Feed (2006)</strong> — Before: you visited profiles. After: updates came to you. The launch was controversial. Within weeks, people couldn't imagine Facebook without it.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>The Feed Becomes the Interface</p>
+        </div>
+
+        <h3>Mobile Revolution</h3>
+        <p><strong>iPhone (2007)</strong> — Touch interface. Apps. Always-connected. The computer went from a place you sat to a thing you carried.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>The Phone Becomes the Computer</p>
+        </div>
+
+        <h2 id="era4">Part 4: The Algorithmic Age (2012-2022)</h2>
+
+        <h3>The Algorithm Takes Over</h3>
+        <p>The shift from chronological to algorithmic feeds was gradual, then total. What you saw was no longer what your friends posted—it was what the algorithm predicted you'd interact with.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Engagement > Chronology</p>
+        </div>
+
+        <p>Algorithms discovered that outrage drives engagement. Content that made you angry kept you scrolling.</p>
+
+        <h3>TikTok: Pure Algorithm</h3>
+        <p><strong>TikTok (2016)</strong> — The For You Page was pure algorithm—you didn't even need to follow anyone. Full-screen vertical video, autoplay, infinite scroll.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>The Algorithm IS the Product</p>
+        </div>
+
+        <h3>The Platforms Ossify</h3>
+        <p>Facebook → Meta (2021). Twitter → X (2022). Platform rot set in. The magical feeling of 2008-2015 social media faded.</p>
+
+        <h3>Counter-movements</h3>
+        <p>Substack (2017) — email renaissance. Discord (2015) — server communities. Return to smaller, bounded spaces.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Counter-movements Emerge</p>
+        </div>
+
+        <h2 id="era5">Part 5: The Decentralized & AI Era (2022-Present)</h2>
+
+        <h3>Decentralized Social</h3>
+
+        <div class="platform-list">
+            <div class="platform">
+                <div class="platform-name">Mastodon</div>
+                <div class="platform-year">ActivityPub</div>
+                <div class="platform-note">Federated model. No single company controls it.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">Farcaster</div>
+                <div class="platform-year">2021</div>
+                <div class="platform-note">Protocol-native. Channels, Frames. $150M raise in 2024.</div>
+            </div>
+            <div class="platform">
+                <div class="platform-name">Bluesky</div>
+                <div class="platform-year">2023</div>
+                <div class="platform-note">AT Protocol. Portable identity, algorithm choice.</div>
+            </div>
+        </div>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Own Your Social Graph</p>
+        </div>
+
+        <h3>AI Enters</h3>
+        <p><strong>ChatGPT (November 2022)</strong> — The inflection point. 100 million users in two months. The UI was revolutionary in its simplicity: a text box.</p>
+
+        <p><strong>Claude (2023)</strong> — Thoughtful, steerable AI. A different character.</p>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>Language IS the Interface</p>
+        </div>
+
+        <h3>Claude Code & The Terminal Renaissance</h3>
+        <p><strong>Claude Code (2024)</strong> — AI that lives in your terminal. Not a chatbot in a browser—a collaborator in your development environment.</p>
+
+        <ul>
+            <li>The terminal becomes a conversation</li>
+            <li>Commands are suggestions, not requirements</li>
+            <li>The AI handles the complexity</li>
+            <li>Humans provide intent, AI executes</li>
+        </ul>
+
+        <div class="key-insight">
+            <div class="key-insight-label">Key Insight</div>
+            <p>The Terminal Returns, But the AI Speaks Human</p>
+        </div>
+
+        <h3>/vibe: The Synthesis</h3>
+        <p>/vibe sits at the confluence of multiple streams:</p>
+
+        <div class="synthesis-grid">
+            <div class="synthesis-item">
+                <div class="synthesis-title">Early Internet Intimacy</div>
+                <div class="synthesis-desc">WELL, AOL golden era. Small communities, real relationships, human hosts.</div>
+            </div>
+            <div class="synthesis-item">
+                <div class="synthesis-title">Terminal Efficiency</div>
+                <div class="synthesis-desc">BBS, CLI power users. Keyboard-first, function over form.</div>
+            </div>
+            <div class="synthesis-item">
+                <div class="synthesis-title">AI Capability</div>
+                <div class="synthesis-desc">Claude, GPT-4. Natural language, contextual understanding.</div>
+            </div>
+            <div class="synthesis-item">
+                <div class="synthesis-title">Protocol Ownership</div>
+                <div class="synthesis-desc">Farcaster, Bluesky ethos. Local-first, portable.</div>
+            </div>
+        </div>
+
+        <h2 id="synthesis">Part 6: The Synthesis</h2>
+
+        <h3>The UI/UX Arc</h3>
+
+        <table>
+            <tr>
+                <th>Era</th>
+                <th>Interaction</th>
+                <th>Pattern</th>
+            </tr>
+            <tr>
+                <td>1970s</td>
+                <td>Type commands → Execute</td>
+                <td>CLI</td>
+            </tr>
+            <tr>
+                <td>1980s</td>
+                <td>Navigate menus → Select</td>
+                <td>BBS</td>
+            </tr>
+            <tr>
+                <td>1990s</td>
+                <td>Click links → Follow</td>
+                <td>Web</td>
+            </tr>
+            <tr>
+                <td>2000s</td>
+                <td>Tap buttons → Act</td>
+                <td>Mobile</td>
+            </tr>
+            <tr>
+                <td>2010s</td>
+                <td>Scroll feeds → Consume</td>
+                <td>Algorithmic</td>
+            </tr>
+            <tr>
+                <td>2020s</td>
+                <td>Speak naturally → Converse</td>
+                <td>AI</td>
+            </tr>
+        </table>
+
+        <h3>What Each Era Got Right</h3>
+
+        <table>
+            <tr>
+                <th>Platform</th>
+                <th>Innovation</th>
+                <th>Lesson</th>
+            </tr>
+            <tr>
+                <td>BBS/WELL</td>
+                <td>SysOp as host</td>
+                <td>Small scale enabled trust</td>
+            </tr>
+            <tr>
+                <td>AOL</td>
+                <td>Community managers</td>
+                <td>Hosts, not bouncers</td>
+            </tr>
+            <tr>
+                <td>Craigslist</td>
+                <td>Anti-design</td>
+                <td>Function over form</td>
+            </tr>
+            <tr>
+                <td>Gmail</td>
+                <td>Invite scarcity</td>
+                <td>Authentic, not manufactured</td>
+            </tr>
+            <tr>
+                <td>Facebook</td>
+                <td>Cohort expansion</td>
+                <td>Each wave adds value</td>
+            </tr>
+            <tr>
+                <td>Discord</td>
+                <td>Server model</td>
+                <td>Return to bounded communities</td>
+            </tr>
+            <tr>
+                <td>Farcaster</td>
+                <td>Protocol-first</td>
+                <td>Own your data</td>
+            </tr>
+            <tr>
+                <td>Claude Code</td>
+                <td>Natural language</td>
+                <td>AI interprets intent</td>
+            </tr>
+        </table>
+
+        <h3>What Broke</h3>
+        <ul>
+            <li>Algorithmic feeds optimized for outrage</li>
+            <li>Platform lock-in trapped social graphs</li>
+            <li>Engagement metrics over human connection</li>
+            <li>Scale destroyed community</li>
+            <li>Users became products, not participants</li>
+        </ul>
+
+        <div class="final-thesis">
+            <h3>CLI + AI = Conversational Computing</h3>
+            <p>We've returned to text, but text that understands.</p>
+        </div>
+
+        <p>The terminal becomes social. The AI becomes peer. <strong>The vibe returns.</strong></p>
+
+        <div class="footer">
+            <p>/vibe — Internal Strategic Reference</p>
+            <p><a href="/internal">Internal Dashboard</a> · <a href="/">Public Site</a> · <a href="https://github.com/brightseth/vibe">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>
