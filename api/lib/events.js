@@ -27,7 +27,9 @@ const EVENT_TYPES = [
   'profile_viewed',
   'gig_created',
   'gig_applied',
-  'gig_hired'
+  'gig_hired',
+  'github_connected',
+  'github_contacts_imported'
 ];
 
 /**

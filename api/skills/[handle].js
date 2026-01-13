@@ -13,18 +13,7 @@
  * - Streak data
  */
 
-const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-
-async function getKV() {
-  if (!KV_CONFIGURED) return null;
-  try {
-    const { kv } = await import('@vercel/kv');
-    return kv;
-  } catch (e) {
-    console.error('[skills] KV load error:', e.message);
-    return null;
-  }
-}
+import { kv } from '@vercel/kv';
 
 // Skill categories for organization
 const SKILL_CATEGORIES = {
@@ -91,14 +80,6 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const kv = await getKV();
-  if (!kv) {
-    return res.status(503).json({
-      success: false,
-      error: 'Skills unavailable'
-    });
   }
 
   // Extract handle from path
