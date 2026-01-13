@@ -63,6 +63,9 @@
     { "source": "/api/growth/streak", "destination": "/api/growth/streak.js" },
     { "source": "/api/analytics/summary", "destination": "/api/analytics/summary.js" },
     { "source": "/api/analytics/events", "destination": "/api/analytics/events.js" },
+    { "source": "/api/gigs", "destination": "/api/gigs.js" },
+    { "source": "/api/gigs/:path*", "destination": "/api/gigs.js" },
+    { "source": "/api/skills/:handle", "destination": "/api/skills/[handle].js" },
     { "source": "/api/gigabrain/ingest", "destination": "/api/gigabrain/ingest.js" },
     { "source": "/api/onboarding/welcome", "destination": "/api/onboarding/welcome.js" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
@@ -77,6 +80,7 @@
     { "source": "/history", "destination": "/history.html" },
     { "source": "/arc", "destination": "/arc.html" },
     { "source": "/internal", "destination": "/internal.html" },
+    { "source": "/hire", "destination": "/hire.html" },
     { "source": "/vibe-icon.png", "destination": "/public/vibe-icon.png" }
   ]
 }

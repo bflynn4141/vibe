@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hire a Vibe Coder — /vibe</title>
+    <meta name="description" content="Find and hire skilled vibe coders for your next project. Task Rabbit meets skills marketplace.">
+    <meta property="og:title" content="Hire a Vibe Coder">
+    <meta property="og:description" content="Find skilled vibe coders for your next project.">
+    <meta property="og:image" content="https://slashvibe.dev/vibe-og.png">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+            background: #0A0A0A;
+            color: #E0E0E0;
+            min-height: 100vh;
+            padding: 48px 20px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        a { color: #6B8FFF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 400;
+            margin-bottom: 16px;
+            letter-spacing: -2px;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 24px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 48px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: #6B8FFF;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #8BA4FF;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #333;
+            color: #E0E0E0;
+        }
+
+        .btn-secondary:hover {
+            border-color: #6B8FFF;
+            text-decoration: none;
+        }
+
+        .section {
+            margin-bottom: 64px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #222;
+        }
+
+        .gig-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .gig-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.15s;
+        }
+
+        .gig-card:hover {
+            border-color: #6B8FFF44;
+            transform: translateY(-2px);
+        }
+
+        .gig-category {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6B8FFF;
+            margin-bottom: 8px;
+        }
+
+        .gig-title {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .gig-description {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .gig-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .gig-budget {
+            color: #4CAF50;
+        }
+
+        .gig-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .skill-tag {
+            font-size: 10px;
+            padding: 4px 8px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            color: #888;
+        }
+
+        .talent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .talent-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.15s;
+        }
+
+        .talent-card:hover {
+            border-color: #6B8FFF44;
+        }
+
+        .talent-handle {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .talent-level {
+            font-size: 11px;
+            color: #6B8FFF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .talent-stats {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #666;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 48px;
+            color: #666;
+            border: 1px dashed #333;
+            border-radius: 8px;
+        }
+
+        .how-it-works {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #6B8FFF22;
+            color: #6B8FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-weight: 600;
+        }
+
+        .step-title {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer {
+            text-align: center;
+            padding-top: 48px;
+            border-top: 1px solid #222;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Hire a Vibe Coder</h1>
+            <p class="subtitle">Find skilled builders for your next project.<br>Task Rabbit meets skills marketplace.</p>
+            <div class="cta-buttons">
+                <a href="#post-gig" class="btn btn-primary">Post a Gig</a>
+                <a href="#browse-talent" class="btn btn-secondary">Browse Talent</a>
+            </div>
+        </div>
+
+        <div class="how-it-works">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-title">Post Your Gig</div>
+                <div class="step-desc">Describe what you need built. Set a budget.</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-title">Review Applications</div>
+                <div class="step-desc">Vibe coders apply with auto-generated portfolios.</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-title">Hire & Ship</div>
+                <div class="step-desc">Work together. Ship something amazing.</div>
+            </div>
+        </div>
+
+        <div class="section" id="open-gigs">
+            <h2 class="section-title">Open Gigs</h2>
+            <div id="gigs-container" class="gig-grid">
+                <div class="loading">Loading gigs...</div>
+            </div>
+        </div>
+
+        <div class="section" id="browse-talent">
+            <h2 class="section-title">Featured Talent</h2>
+            <div id="talent-container" class="talent-grid">
+                <div class="loading">Loading talent...</div>
+            </div>
+        </div>
+
+        <div class="section" id="post-gig">
+            <h2 class="section-title">Post a Gig</h2>
+            <p style="color: #888; margin-bottom: 24px;">
+                To post a gig, join /vibe first. Then use the <code style="background: #1a1a1a; padding: 2px 6px; border-radius: 4px;">vibe gig post</code> command.
+            </p>
+            <a href="/" class="btn btn-primary">Join /vibe</a>
+        </div>
+
+        <div class="footer">
+            <a href="/">Home</a> ·
+            <a href="/community">Community</a> ·
+            <a href="https://github.com/brightseth/vibe">GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://www.slashvibe.dev/api';
+
+        // Load open gigs
+        async function loadGigs() {
+            try {
+                const res = await fetch(`${API_BASE}/gigs`);
+                const data = await res.json();
+
+                const container = document.getElementById('gigs-container');
+
+                if (!data.gigs || data.gigs.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty" style="grid-column: 1/-1;">
+                            No open gigs yet. Be the first to post one!
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.gigs.map(gig => `
+                    <div class="gig-card">
+                        <div class="gig-category">${gig.category}</div>
+                        <div class="gig-title">${escapeHtml(gig.title)}</div>
+                        <div class="gig-description">${escapeHtml(gig.description)}</div>
+                        <div class="gig-skills">
+                            ${(gig.skills_needed || []).slice(0, 5).map(s => `<span class="skill-tag">${escapeHtml(s)}</span>`).join('')}
+                        </div>
+                        <div class="gig-meta">
+                            <span>by @${escapeHtml(gig.poster)}</span>
+                            <span class="gig-budget">$${gig.budget?.min || 100}-${gig.budget?.max || 500}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('gigs-container').innerHTML = `
+                    <div class="empty" style="grid-column: 1/-1;">
+                        Unable to load gigs. Try again later.
+                    </div>
+                `;
+            }
+        }
+
+        // Load featured talent (active users with ships)
+        async function loadTalent() {
+            try {
+                const res = await fetch(`${API_BASE}/growth/leaderboard`);
+                const data = await res.json();
+
+                const container = document.getElementById('talent-container');
+
+                if (!data.leaderboard || data.leaderboard.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty" style="grid-column: 1/-1;">
+                            No talent profiles yet.
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Show top 8 active users
+                const talent = data.leaderboard
+                    .filter(u => u.isActive)
+                    .slice(0, 8);
+
+                container.innerHTML = talent.map(user => `
+                    <a href="/u/${escapeHtml(user.handle)}" class="talent-card" style="text-decoration: none;">
+                        <div class="talent-handle">@${escapeHtml(user.handle)}</div>
+                        <div class="talent-level">${user.genesis ? 'Genesis' : 'Builder'}</div>
+                        <div class="talent-stats">
+                            Score: ${user.growthScore}
+                        </div>
+                    </a>
+                `).join('');
+            } catch (e) {
+                document.getElementById('talent-container').innerHTML = `
+                    <div class="empty" style="grid-column: 1/-1;">
+                        Unable to load talent. Try again later.
+                    </div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load data on page load
+        loadGigs();
+        loadTalent();
+    </script>
+</body>
+</html>

@@ -24,7 +24,10 @@ const EVENT_TYPES = [
   'presence_heartbeat',
   'handle_registered',
   'streak_milestone',
-  'profile_viewed'
+  'profile_viewed',
+  'gig_created',
+  'gig_applied',
+  'gig_hired'
 ];
 
 /**
