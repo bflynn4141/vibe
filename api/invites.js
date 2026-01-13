@@ -17,6 +17,7 @@
 
 import crypto from 'crypto';
 import { getHandleRecord, claimHandle } from './lib/handles.js';
+import { logEvent } from './lib/events.js';
 
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
@@ -195,6 +196,9 @@ export default async function handler(req, res) {
     // Track user's codes
     await kv.sadd(userCodesKey, code);
 
+    // Log analytics event
+    await logEvent(kv, 'invite_created', handle, { code });
+
     return res.status(200).json({
       success: true,
       code,
@@ -330,6 +334,13 @@ export default async function handler(req, res) {
       console.error('[invites/redeem] Welcome message error:', welcomeErr);
       // Don't fail the registration if welcome fails
     }
+
+    // Log analytics event
+    await logEvent(kv, 'invite_redeemed', normalizedHandle, {
+      code: normalizedCode,
+      inviter: invite.created_by,
+      genesis_number: claimResult.genesis_number
+    });
 
     return res.status(200).json({
       success: true,

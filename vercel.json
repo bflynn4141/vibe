@@ -32,6 +32,14 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/decks/origin", "destination": "https://manus.im/app/78Rqign33nm49Z8V41pmdV", "permanent": false },
+    { "source": "/decks/pitch", "destination": "https://manus.im/app/gRpfjt2aZvbmckbJS7wDBa", "permanent": false },
+    { "source": "/decks/entity", "destination": "https://manus.im/app/bz29w23bkcQVq8PLKhxUjq", "permanent": false },
+    { "source": "/decks/economics", "destination": "https://manus.im/app/5EV375pGehDWcPSVTMyPME", "permanent": false },
+    { "source": "/decks/flywheel", "destination": "https://manus.im/app/aLQPEXTFtWP8iqeWf7Fjxu", "permanent": false },
+    { "source": "/decks/archaeology", "destination": "https://manus.im/app/TQy7xqFUFBMMRuy22UeVns", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/style-demo", "destination": "/api/style-demo" },
     { "source": "/artifacts", "destination": "/api/artifacts-browse" },
@@ -53,6 +61,8 @@
     { "source": "/share/:id", "destination": "/api/share/:id" },
     { "source": "/api/growth/leaderboard", "destination": "/api/growth/leaderboard.js" },
     { "source": "/api/growth/streak", "destination": "/api/growth/streak.js" },
+    { "source": "/api/analytics/summary", "destination": "/api/analytics/summary.js" },
+    { "source": "/api/analytics/events", "destination": "/api/analytics/events.js" },
     { "source": "/api/gigabrain/ingest", "destination": "/api/gigabrain/ingest.js" },
     { "source": "/api/onboarding/welcome", "destination": "/api/onboarding/welcome.js" },
     { "source": "/dashboard", "destination": "/dashboard.html" },

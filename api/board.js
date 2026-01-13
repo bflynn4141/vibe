@@ -8,6 +8,8 @@
  * Uses Vercel KV (Redis) for persistence with in-memory fallback
  */
 
+import { logEvent } from './lib/events.js';
+
 // Check if KV is configured
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
@@ -176,6 +178,9 @@ async function createEntry({ author, category, content, tags = [] }) {
 
       // Generate share URL for viral distribution
       const shareUrl = `https://slashvibe.dev/api/share/${id}`;
+
+      // Log analytics event
+      await logEvent(kv, 'board_post_created', author, { category, id, tags });
 
       return { success: true, id, entry, shareUrl, streak: `Share your ship: ${shareUrl}` };
     } catch (e) {

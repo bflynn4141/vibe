@@ -13,6 +13,8 @@
  * GET /api/messages?user=X&with=Y - Get thread between X and Y
  */
 
+import { logEvent } from './lib/events.js';
+
 // Check if KV is configured via environment variables
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
@@ -104,6 +106,12 @@ export default async function handler(req, res) {
     }
 
     await saveMessages(messages);
+
+    // Log analytics event
+    const kv = await getKV();
+    if (kv) {
+      await logEvent(kv, 'message_sent', message.from, { to: message.to });
+    }
 
     return res.status(200).json({
       success: true,
