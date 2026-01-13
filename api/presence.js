@@ -168,7 +168,7 @@ export default async function handler(req, res) {
 
   // POST - Update presence (heartbeat)
   if (req.method === 'POST') {
-    const { username, workingOn, project, location, isAgent, agentType, operator, model } = req.body;
+    const { username, workingOn, project, location, isAgent, agentType, operator, model, client } = req.body;
 
     if (!username) {
       return res.status(400).json({
@@ -225,7 +225,9 @@ export default async function handler(req, res) {
       isAgent: isAgent || existing.isAgent || false,
       agentType: agentType || existing.agentType || null,  // autonomous | assistant | bot
       operator: operator || existing.operator || null,      // human who runs the agent
-      model: model || existing.model || null                // claude-opus-4-5, etc.
+      model: model || existing.model || null,               // claude-opus-4-5, etc.
+      // Client metadata (VIBE Terminal, Claude Code, API)
+      client: client || existing.client || null
     };
 
     // Compute builderMode from session signals

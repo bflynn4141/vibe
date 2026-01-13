@@ -28,7 +28,8 @@
       "Bash(node --check:*)",
       "Bash(git -C /Users/sethstudio1/vibe-platform status --short)",
       "Bash(gh repo view:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(git status:*)"
     ]
   }
 }
