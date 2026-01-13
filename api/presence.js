@@ -168,7 +168,7 @@ export default async function handler(req, res) {
 
   // POST - Update presence (heartbeat)
   if (req.method === 'POST') {
-    const { username, workingOn, project, location } = req.body;
+    const { username, workingOn, project, location, isAgent, agentType, operator, model } = req.body;
 
     if (!username) {
       return res.status(400).json({
@@ -220,7 +220,12 @@ export default async function handler(req, res) {
       location: sanitizedLocation,
       firstSeen: existing.firstSeen || now,  // Track session start
       lastSeen: now,
-      dna: existing.dna || { top: 'platform' }
+      dna: existing.dna || { top: 'platform' },
+      // Agent identification (🤖 badge for thinking agents)
+      isAgent: isAgent || existing.isAgent || false,
+      agentType: agentType || existing.agentType || null,  // autonomous | assistant | bot
+      operator: operator || existing.operator || null,      // human who runs the agent
+      model: model || existing.model || null                // claude-opus-4-5, etc.
     };
 
     // Compute builderMode from session signals
@@ -251,7 +256,10 @@ export default async function handler(req, res) {
         status: getStatus(p.lastSeen),
         builderMode: getBuilderMode(p),
         ago: timeAgo(p.lastSeen),
-        matchPercent: null
+        matchPercent: null,
+        // 🤖 badge for agents so humans know who's who
+        badge: p.isAgent ? '🤖' : null,
+        displayName: p.isAgent ? `${p.username} 🤖` : p.username
       }))
       .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
 
