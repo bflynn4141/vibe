@@ -139,9 +139,8 @@ export default async function handler(req, res) {
     if (!proofValid) {
       // Log failed attempt
       await sql`
-        INSERT INTO audit_log (id, event_type, handle, success, details, ip_hash)
+        INSERT INTO audit_log (event_type, handle, success, details, ip_address)
         VALUES (
-          'audit_' || gen_random_uuid()::text,
           'key_rotation',
           ${handle},
           false,
@@ -167,9 +166,8 @@ export default async function handler(req, res) {
     if (rateCheck.limited) {
       // Log rate-limited attempt
       await sql`
-        INSERT INTO audit_log (id, event_type, handle, success, details, ip_hash)
+        INSERT INTO audit_log (event_type, handle, success, details, ip_address)
         VALUES (
-          'audit_' || gen_random_uuid()::text,
           'rate_limited',
           ${handle},
           false,
@@ -202,9 +200,8 @@ export default async function handler(req, res) {
       if (e.code === '23505') { // Unique violation
         // Log replay attempt
         await sql`
-          INSERT INTO audit_log (id, event_type, handle, success, details, ip_hash)
+          INSERT INTO audit_log (event_type, handle, success, details, ip_address)
           VALUES (
-            'audit_' || gen_random_uuid()::text,
             'key_rotation',
             ${handle},
             false,
@@ -262,9 +259,8 @@ export default async function handler(req, res) {
 
     // 13. Log successful rotation to audit log
     await sql`
-      INSERT INTO audit_log (id, event_type, handle, success, details, ip_hash)
+      INSERT INTO audit_log (event_type, handle, success, details, ip_address)
       VALUES (
-        'audit_' || gen_random_uuid()::text,
         'key_rotation',
         ${handle},
         true,
@@ -294,9 +290,8 @@ export default async function handler(req, res) {
     // Log error to audit log
     try {
       await sql`
-        INSERT INTO audit_log (id, event_type, handle, success, details, ip_hash)
+        INSERT INTO audit_log (event_type, handle, success, details, ip_address)
         VALUES (
-          'audit_' || gen_random_uuid()::text,
           'key_rotation',
           ${handle},
           false,
