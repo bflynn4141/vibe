@@ -100,6 +100,8 @@
     { "source": "/stats", "destination": "/stats.html" },
     { "source": "/hire", "destination": "/hire.html" },
     { "source": "/vibe-icon.png", "destination": "/public/vibe-icon.png" },
+    { "source": "/og-alpha.png", "destination": "/public/og-alpha.png" },
+    { "source": "/og-image.png", "destination": "/public/og-image.png" },
     { "source": "/downloads/:path*", "destination": "/public/downloads/:path*" }
   ]
 }
