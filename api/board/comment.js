@@ -14,6 +14,7 @@ import { checkRateLimit, rateLimitResponse } from '../lib/ratelimit.js';
 import { sanitizeContent, sanitizeHandle } from '../lib/sanitize.js';
 import { setSecurityHeaders } from '../lib/security.js';
 import { logEvent } from '../lib/events.js';
+import { logInteraction } from '../lib/graph.js';
 
 const MESSAGES_KEY = 'vibe:messages';
 
@@ -173,6 +174,14 @@ export default async function handler(req, res) {
         console.error('[board/comment] Notification error:', notifErr.message);
         // Non-critical, continue
       }
+
+      // Log to social graph (non-blocking)
+      logInteraction({
+        from: normalizedHandle,
+        to: entry.author,
+        action: 'comment',
+        metadata: { entryId, commentId: comment.id }
+      }).catch(e => console.error('[board/comment] Graph log error:', e.message));
     }
 
     return res.status(200).json({

@@ -11,6 +11,7 @@
  */
 
 import { kv } from '@vercel/kv';
+import { logInteraction } from '../lib/graph.js';
 
 // Supported reaction types with emoji mapping
 const REACTIONS = {
@@ -131,6 +132,14 @@ export default async function handler(req, res) {
         console.error('[board/react] Notification error:', notifErr.message);
         // Non-critical, continue
       }
+
+      // Log to social graph (non-blocking)
+      logInteraction({
+        from: normalizedHandle,
+        to: entry.author,
+        action: 'reaction',
+        metadata: { reaction, emoji: REACTIONS[reaction], entryId }
+      }).catch(e => console.error('[board/react] Graph log error:', e.message));
     }
 
     // Calculate total reactions for this entry
