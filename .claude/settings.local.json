@@ -47,7 +47,11 @@
       "Bash(git merge:*)",
       "Bash(git stash:*)",
       "Bash(pnpm tauri build:*)",
-      "Bash(POSTGRES_URL=$POSTGRES_DATABASE_URL node:*)"
+      "Bash(POSTGRES_URL=$POSTGRES_DATABASE_URL node:*)",
+      "Bash(POSTGRES_URL=\"postgresql://neondb_owner:npg_9kTcR2rjDgfL@ep-mute-shadow-a4wxb1jy-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require\" node:*)",
+      "Bash(PGPASSWORD=\"npg_9kTcR2rjDgfL\" psql:*)",
+      "Bash(vercel logs:*)",
+      "Bash(pnpm install:*)"
     ]
   }
 }

@@ -20,9 +20,8 @@ function escapeHtml(str) {
 }
 
 export default async function handler(req, res) {
-  // Extract session ID from path
-  const pathParts = req.url.split('?')[0].split('/');
-  const id = pathParts[pathParts.length - 1] || req.query.id;
+  // Extract session ID from Vercel's dynamic route param
+  const id = req.query.id;
 
   if (!id || !id.startsWith('ses_')) {
     return res.status(400).send(`
