@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watching Live — /vibe</title>
+  <meta name="description" content="Watch live terminal sessions on /vibe">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Live Terminal Session — /vibe">
+  <meta property="og:description" content="Watch developers build in real-time">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://slashvibe.dev/public/vibe-og.png">
+
+  <!-- xterm.js -->
+  <link rel="stylesheet" href="https://unpkg.com/@xterm/xterm@5.3.0/css/xterm.css" />
+  <script src="https://unpkg.com/@xterm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://unpkg.com/@xterm/addon-fit@0.8.0/lib/addon-fit.js"></script>
+  <script src="https://unpkg.com/@xterm/addon-web-links@0.9.0/lib/addon-web-links.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Main container */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Header */
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #111;
+      border-bottom: 1px solid #222;
+    }
+
+    #header h1 {
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-badge {
+      background: #ef4444;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .viewer-count {
+      font-size: 13px;
+      color: #888;
+    }
+
+    /* Terminal container */
+    #terminal-container {
+      flex: 1;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    #terminal-container .xterm {
+      height: 100%;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 280px;
+      background: #111;
+      border-left: 1px solid #222;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar {
+        display: none;
+      }
+    }
+
+    /* Broadcaster info */
+    #broadcaster-info {
+      padding: 16px;
+      border-bottom: 1px solid #222;
+    }
+
+    #broadcaster-info h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    #broadcaster-info .meta {
+      font-size: 12px;
+      color: #888;
+    }
+
+    /* Reactions */
+    #reactions {
+      padding: 16px;
+      border-bottom: 1px solid #222;
+    }
+
+    #reactions h4 {
+      font-size: 12px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #reaction-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .reaction-btn {
+      font-size: 20px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .reaction-btn:hover {
+      background: #222;
+      border-color: #444;
+      transform: scale(1.1);
+    }
+
+    .reaction-btn:active {
+      transform: scale(0.95);
+    }
+
+    .reaction-btn.sent {
+      animation: reactionSent 0.5s ease;
+    }
+
+    @keyframes reactionSent {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    /* Recent reactions feed */
+    #reaction-feed {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    #reaction-feed h4 {
+      font-size: 12px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .reaction-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      font-size: 13px;
+      color: #aaa;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reaction-item .emoji {
+      font-size: 16px;
+    }
+
+    /* States */
+    #loading, #error, #ended {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    #loading h2, #error h2, #ended h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    #error {
+      color: #ef4444;
+    }
+
+    #ended {
+      color: #888;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #333;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Footer */
+    #footer {
+      padding: 12px 16px;
+      border-top: 1px solid #222;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+
+    #footer a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+
+    #footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <!-- Header -->
+    <div id="header">
+      <h1>
+        <span class="live-badge">LIVE</span>
+        <span>Watching @<span id="handle">...</span></span>
+      </h1>
+      <div class="viewer-count">
+        <span id="viewer-count">0</span> watching
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <h2>Connecting to stream...</h2>
+      <p>Getting the latest terminal output</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="error" class="hidden">
+      <h2>Stream Not Found</h2>
+      <p id="error-message">This broadcast may have ended or doesn't exist.</p>
+      <p style="margin-top: 16px"><a href="/">Back to /vibe</a></p>
+    </div>
+
+    <!-- Ended state -->
+    <div id="ended" class="hidden">
+      <h2>Stream Ended</h2>
+      <p>@<span id="ended-handle">someone</span> has stopped broadcasting.</p>
+      <p style="margin-top: 16px"><a href="/">Back to /vibe</a></p>
+    </div>
+
+    <!-- Terminal -->
+    <div id="terminal-container" class="hidden"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="broadcaster-info">
+      <h3>@<span id="sidebar-handle">...</span></h3>
+      <div class="meta">Started <span id="started-ago">just now</span></div>
+    </div>
+
+    <div id="reactions">
+      <h4>Send Reaction</h4>
+      <div id="reaction-buttons">
+        <button class="reaction-btn" data-reaction="fire" title="Fire">🔥</button>
+        <button class="reaction-btn" data-reaction="mind_blown" title="Mind Blown">🤯</button>
+        <button class="reaction-btn" data-reaction="hundred" title="100">💯</button>
+        <button class="reaction-btn" data-reaction="eyes" title="Eyes">👀</button>
+        <button class="reaction-btn" data-reaction="clap" title="Clap">👏</button>
+        <button class="reaction-btn" data-reaction="rocket" title="Rocket">🚀</button>
+      </div>
+    </div>
+
+    <div id="reaction-feed">
+      <h4>Recent Activity</h4>
+      <div id="feed-items">
+        <!-- Reactions will appear here -->
+      </div>
+    </div>
+
+    <div id="footer">
+      Powered by <a href="https://slashvibe.dev">/vibe</a>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const API_BASE = 'https://www.slashvibe.dev/api';
+    const POLL_INTERVAL = 200; // ms
+
+    // State
+    let roomId = null;
+    let viewerId = null;
+    let lastSeq = 0;
+    let term = null;
+    let fitAddon = null;
+    let isStreaming = false;
+    let pollTimeout = null;
+    let broadcastHandle = null;
+
+    // DOM elements
+    const loadingEl = document.getElementById('loading');
+    const errorEl = document.getElementById('error');
+    const endedEl = document.getElementById('ended');
+    const terminalContainer = document.getElementById('terminal-container');
+    const handleEl = document.getElementById('handle');
+    const sidebarHandleEl = document.getElementById('sidebar-handle');
+    const viewerCountEl = document.getElementById('viewer-count');
+    const startedAgoEl = document.getElementById('started-ago');
+    const feedItemsEl = document.getElementById('feed-items');
+
+    // Get room ID from URL
+    function getRoomId() {
+      const path = window.location.pathname;
+      const segments = path.split('/').filter(Boolean);
+      return segments[segments.length - 1];
+    }
+
+    // Initialize terminal
+    function initTerminal() {
+      term = new Terminal({
+        theme: {
+          background: '#0a0a0a',
+          foreground: '#e0e0e0',
+          cursor: '#e0e0e0',
+          cursorAccent: '#0a0a0a',
+          selectionBackground: '#3b3b3b',
+          black: '#1a1a1a',
+          red: '#ef4444',
+          green: '#22c55e',
+          yellow: '#eab308',
+          blue: '#3b82f6',
+          magenta: '#a855f7',
+          cyan: '#06b6d4',
+          white: '#e0e0e0',
+          brightBlack: '#666666',
+          brightRed: '#f87171',
+          brightGreen: '#4ade80',
+          brightYellow: '#facc15',
+          brightBlue: '#60a5fa',
+          brightMagenta: '#c084fc',
+          brightCyan: '#22d3ee',
+          brightWhite: '#ffffff',
+        },
+        fontSize: 14,
+        fontFamily: 'JetBrains Mono, Menlo, Monaco, monospace',
+        cursorBlink: false,
+        cursorStyle: 'block',
+        scrollback: 5000,
+        convertEol: true,
+      });
+
+      fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+
+      const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+      term.loadAddon(webLinksAddon);
+
+      term.open(terminalContainer);
+      fitAddon.fit();
+
+      // Handle resize
+      window.addEventListener('resize', () => {
+        if (fitAddon) fitAddon.fit();
+      });
+    }
+
+    // Show state
+    function showState(state) {
+      loadingEl.classList.add('hidden');
+      errorEl.classList.add('hidden');
+      endedEl.classList.add('hidden');
+      terminalContainer.classList.add('hidden');
+
+      if (state === 'loading') loadingEl.classList.remove('hidden');
+      if (state === 'error') errorEl.classList.remove('hidden');
+      if (state === 'ended') endedEl.classList.remove('hidden');
+      if (state === 'streaming') {
+        terminalContainer.classList.remove('hidden');
+        if (fitAddon) fitAddon.fit();
+      }
+    }
+
+    // Poll for updates
+    async function poll() {
+      if (!isStreaming) return;
+
+      try {
+        const url = `${API_BASE}/watch?room=${roomId}&stream=true&since=${lastSeq}` +
+                    (viewerId ? `&viewerId=${viewerId}` : '');
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.success) {
+          isStreaming = false;
+          document.getElementById('ended-handle').textContent = broadcastHandle || 'someone';
+          showState('ended');
+          return;
+        }
+
+        // Update viewer ID
+        if (!viewerId) {
+          viewerId = data.viewerId;
+        }
+
+        // Update UI
+        broadcastHandle = data.broadcast.handle;
+        handleEl.textContent = data.broadcast.handle;
+        sidebarHandleEl.textContent = data.broadcast.handle;
+        viewerCountEl.textContent = data.viewerCount;
+        document.title = `Watching @${data.broadcast.handle} — /vibe`;
+
+        // Update started time
+        if (data.broadcast.startedAt) {
+          startedAgoEl.textContent = timeAgo(data.broadcast.startedAt);
+        }
+
+        // Write new chunks to terminal
+        if (data.chunks && data.chunks.length > 0) {
+          for (const chunk of data.chunks) {
+            term.write(chunk.data);
+            lastSeq = Math.max(lastSeq, chunk.seq);
+          }
+        }
+
+        // Continue polling
+        pollTimeout = setTimeout(poll, POLL_INTERVAL);
+
+      } catch (e) {
+        console.error('Poll error:', e);
+        pollTimeout = setTimeout(poll, POLL_INTERVAL * 5); // Backoff on error
+      }
+    }
+
+    // Time ago helper
+    function timeAgo(dateStr) {
+      const now = new Date();
+      const date = new Date(dateStr);
+      const seconds = Math.floor((now - date) / 1000);
+
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      return `${Math.floor(seconds / 86400)}d ago`;
+    }
+
+    // Send reaction
+    async function sendReaction(reaction) {
+      if (!roomId || !viewerId) return;
+
+      try {
+        await fetch(`${API_BASE}/watch/react`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId,
+            reaction,
+            viewerId,
+            handle: viewerId // Anonymous for now
+          })
+        });
+
+        // Add to local feed
+        addReactionToFeed(reaction, 'You');
+
+      } catch (e) {
+        console.error('Reaction error:', e);
+      }
+    }
+
+    // Add reaction to feed
+    function addReactionToFeed(reaction, who) {
+      const emojiMap = {
+        fire: '🔥',
+        mind_blown: '🤯',
+        hundred: '💯',
+        eyes: '👀',
+        clap: '👏',
+        rocket: '🚀'
+      };
+
+      const item = document.createElement('div');
+      item.className = 'reaction-item';
+      item.innerHTML = `<span class="emoji">${emojiMap[reaction] || reaction}</span> ${who} reacted`;
+
+      feedItemsEl.insertBefore(item, feedItemsEl.firstChild);
+
+      // Keep only last 20 items
+      while (feedItemsEl.children.length > 20) {
+        feedItemsEl.removeChild(feedItemsEl.lastChild);
+      }
+    }
+
+    // Setup reaction buttons
+    function setupReactions() {
+      const buttons = document.querySelectorAll('.reaction-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const reaction = btn.dataset.reaction;
+          btn.classList.add('sent');
+          setTimeout(() => btn.classList.remove('sent'), 500);
+          sendReaction(reaction);
+        });
+      });
+    }
+
+    // Initialize
+    async function init() {
+      roomId = getRoomId();
+
+      if (!roomId || roomId === 'room') {
+        document.getElementById('error-message').textContent = 'No room specified in URL.';
+        showState('error');
+        return;
+      }
+
+      showState('loading');
+
+      // Check if broadcast exists
+      try {
+        const res = await fetch(`${API_BASE}/watch?room=${roomId}`);
+        const data = await res.json();
+
+        if (!data.success || !data.broadcast) {
+          document.getElementById('error-message').textContent =
+            'This broadcast may have ended or the link is invalid.';
+          showState('error');
+          return;
+        }
+
+        // Initialize terminal
+        initTerminal();
+
+        // Setup reactions
+        setupReactions();
+
+        // Start streaming
+        isStreaming = true;
+        showState('streaming');
+        poll();
+
+      } catch (e) {
+        console.error('Init error:', e);
+        document.getElementById('error-message').textContent =
+          'Failed to connect. Please try again.';
+        showState('error');
+      }
+    }
+
+    // Start
+    init();
+
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+      isStreaming = false;
+      if (pollTimeout) clearTimeout(pollTimeout);
+    });
+  </script>
+</body>
+</html>

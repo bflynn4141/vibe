@@ -251,19 +251,57 @@ export default async function handler(req, res) {
 
     const allPresence = await getAllPresence();
 
+    // Check for active broadcasts to add LIVE badges
+    let broadcasts = {};
+    try {
+      const kv = await getKV();
+      if (kv) {
+        broadcasts = await kv.get('vibe:broadcasts') || {};
+      }
+    } catch (e) {
+      // Non-critical, continue without broadcast info
+    }
+
+    // Build broadcast lookup by handle
+    const broadcastByHandle = {};
+    for (const [roomId, broadcast] of Object.entries(broadcasts)) {
+      if (broadcast.handle) {
+        broadcastByHandle[broadcast.handle] = {
+          roomId,
+          startedAt: broadcast.startedAt
+        };
+      }
+    }
+
     // Build presence list with computed status and builderMode
     const list = allPresence
-      .map(p => ({
-        ...p,
-        status: getStatus(p.lastSeen),
-        builderMode: getBuilderMode(p),
-        ago: timeAgo(p.lastSeen),
-        matchPercent: null,
-        // 🤖 badge for agents so humans know who's who
-        badge: p.isAgent ? '🤖' : null,
-        displayName: p.isAgent ? `${p.username} 🤖` : p.username
-      }))
-      .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+      .map(p => {
+        const broadcast = broadcastByHandle[p.username];
+        const isLive = !!broadcast;
+
+        return {
+          ...p,
+          status: getStatus(p.lastSeen),
+          builderMode: isLive ? 'streaming' : getBuilderMode(p),
+          ago: timeAgo(p.lastSeen),
+          matchPercent: null,
+          // LIVE badge takes precedence over agent badge
+          isLive,
+          roomId: broadcast?.roomId || null,
+          watchUrl: isLive ? `https://slashvibe.dev/watch/${broadcast.roomId}` : null,
+          // Badge: LIVE > Agent > null
+          badge: isLive ? '🔴' : (p.isAgent ? '🤖' : null),
+          displayName: isLive
+            ? `${p.username} 🔴 LIVE`
+            : (p.isAgent ? `${p.username} 🤖` : p.username)
+        };
+      })
+      .sort((a, b) => {
+        // Sort LIVE users first, then by lastSeen
+        if (a.isLive && !b.isLive) return -1;
+        if (!a.isLive && b.isLive) return 1;
+        return new Date(b.lastSeen) - new Date(a.lastSeen);
+      });
 
     // Filter out system accounts (bots, bridges, test users)
     const humanList = list.filter(p => !SYSTEM_ACCOUNTS.has(p.username));
@@ -286,7 +324,8 @@ export default async function handler(req, res) {
         active: active.length,
         away: away.length,
         total: humanList.length,
-        systemOnline: systemList.filter(p => p.status === 'active').length
+        systemOnline: systemList.filter(p => p.status === 'active').length,
+        live: humanList.filter(p => p.isLive).length
       },
       storage: KV_CONFIGURED ? 'kv' : 'memory'
     });
