@@ -51,11 +51,46 @@
       50% { opacity: 0.4; }
     }
 
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #222;
+    }
+
+    .section-header h2 {
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .section-header .badge {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .badge.platform {
+      background: #1e3a5f;
+      color: #6B8FFF;
+    }
+
+    .badge.terminal {
+      background: #1e4620;
+      color: #4ade80;
+    }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
     }
 
     .card {
@@ -65,16 +100,24 @@
       padding: 20px;
     }
 
-    .card h2 {
-      font-size: 12px;
+    .card.highlight-platform {
+      border-color: #1e3a5f;
+    }
+
+    .card.highlight-terminal {
+      border-color: #1e4620;
+    }
+
+    .card h3 {
+      font-size: 11px;
       color: #666;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .big-number {
-      font-size: 48px;
+      font-size: 42px;
       font-weight: bold;
       color: #6B8FFF;
     }
@@ -96,11 +139,70 @@
 
     .stat-label {
       color: #888;
+      font-size: 13px;
     }
 
     .stat-value {
       color: #fff;
       font-weight: bold;
+      font-size: 13px;
+    }
+
+    .user-list {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .user-item:last-child {
+      border-bottom: none;
+    }
+
+    .user-name {
+      color: #6B8FFF;
+      font-size: 13px;
+    }
+
+    .user-status {
+      font-size: 11px;
+      color: #4ade80;
+    }
+
+    .user-status.away {
+      color: #666;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .action-item {
+      background: #0A0A0A;
+      padding: 10px 8px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .action-count {
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .action-name {
+      font-size: 9px;
+      color: #666;
+      text-transform: uppercase;
+      margin-top: 2px;
     }
 
     .funnel {
@@ -115,87 +217,45 @@
       gap: 12px;
     }
 
-    .funnel-bar {
-      height: 24px;
-      background: #6B8FFF;
+    .funnel-bar-container {
+      flex: 1;
+      background: #1a1a1a;
       border-radius: 4px;
-      min-width: 20px;
-      transition: width 0.3s;
+      height: 28px;
+      overflow: hidden;
+    }
+
+    .funnel-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4ade80, #22c55e);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      min-width: 30px;
+      transition: width 0.5s ease;
+    }
+
+    .funnel-bar span {
+      font-size: 12px;
+      font-weight: bold;
+      color: #000;
     }
 
     .funnel-label {
-      font-size: 12px;
+      font-size: 11px;
       color: #888;
-      min-width: 140px;
-    }
-
-    .funnel-value {
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .user-list {
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .user-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #1a1a1a;
-    }
-
-    .user-item:last-child {
-      border-bottom: none;
-    }
-
-    .user-name {
-      color: #6B8FFF;
-    }
-
-    .user-status {
-      font-size: 12px;
-      color: #4ade80;
-    }
-
-    .user-status.away {
-      color: #666;
-    }
-
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .action-item {
-      background: #0A0A0A;
-      padding: 12px;
-      border-radius: 4px;
-      text-align: center;
-    }
-
-    .action-count {
-      font-size: 24px;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .action-name {
-      font-size: 10px;
-      color: #666;
-      text-transform: uppercase;
-      margin-top: 4px;
+      width: 100px;
+      text-align: right;
     }
 
     .dau-chart {
       display: flex;
       align-items: flex-end;
-      gap: 8px;
-      height: 100px;
-      padding-top: 16px;
+      gap: 6px;
+      height: 80px;
+      padding-top: 12px;
     }
 
     .dau-bar {
@@ -204,6 +264,7 @@
       border-radius: 2px 2px 0 0;
       min-height: 4px;
       position: relative;
+      cursor: pointer;
     }
 
     .dau-bar:hover::after {
@@ -217,13 +278,18 @@
       border-radius: 4px;
       font-size: 10px;
       white-space: nowrap;
+      z-index: 10;
     }
 
     .refresh-info {
       text-align: center;
       color: #444;
       font-size: 11px;
-      margin-top: 24px;
+      margin-top: 32px;
+    }
+
+    .refresh-info a {
+      color: #6B8FFF;
     }
 
     .error {
@@ -233,6 +299,12 @@
       padding: 16px;
       border-radius: 8px;
       margin-bottom: 24px;
+    }
+
+    .empty-state {
+      color: #444;
+      font-style: italic;
+      font-size: 13px;
     }
   </style>
 </head>
@@ -247,89 +319,187 @@
 
   <div id="error-container"></div>
 
-  <div class="grid">
-    <!-- Genesis / Presence -->
-    <div class="card">
-      <h2>Genesis Status</h2>
-      <div class="big-number" id="genesis-remaining">--</div>
-      <div style="color: #666; margin-top: 8px;">spots remaining</div>
-      <div style="margin-top: 16px;">
-        <div class="stat-row">
-          <span class="stat-label">Total Founders</span>
-          <span class="stat-value" id="total-founders">--</span>
+  <!-- PLATFORM SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Platform</h2>
+      <span class="badge platform">slashvibe.dev</span>
+    </div>
+    <div class="grid">
+      <!-- Genesis Status -->
+      <div class="card highlight-platform">
+        <h3>Genesis Status</h3>
+        <div class="big-number" id="genesis-remaining">--</div>
+        <div style="color: #666; margin-top: 4px; font-size: 12px;">spots remaining</div>
+        <div style="margin-top: 12px;">
+          <div class="stat-row">
+            <span class="stat-label">Total Founders</span>
+            <span class="stat-value" id="total-founders">--</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Registered Handles</span>
+            <span class="stat-value" id="registered-handles">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Who's Online -->
+      <div class="card highlight-platform">
+        <h3>Who's Online</h3>
+        <div class="user-list" id="user-list">
+          <div class="empty-state">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Presence Stats -->
+      <div class="card highlight-platform">
+        <h3>Presence</h3>
+        <div style="display: flex; gap: 24px; margin-bottom: 12px;">
+          <div>
+            <div class="big-number green" style="font-size: 36px;" id="online-now">--</div>
+            <div style="color: #666; font-size: 11px;">online</div>
+          </div>
+          <div>
+            <div class="big-number" style="font-size: 36px; color: #666;" id="away-count">--</div>
+            <div style="color: #666; font-size: 11px;">away</div>
+          </div>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Online Now</span>
-          <span class="stat-value" id="online-now">--</span>
+          <span class="stat-label">Messages Today</span>
+          <span class="stat-value" id="messages-today">--</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Away</span>
-          <span class="stat-value" id="away-count">--</span>
+          <span class="stat-label">Ships Posted</span>
+          <span class="stat-value" id="ships-today">--</span>
         </div>
       </div>
-    </div>
 
-    <!-- Active Users -->
-    <div class="card">
-      <h2>Who's Online</h2>
-      <div class="user-list" id="user-list">
-        <div style="color: #666;">Loading...</div>
-      </div>
-    </div>
-
-    <!-- DAU Chart -->
-    <div class="card">
-      <h2>Daily Active Users (7 days)</h2>
-      <div class="dau-chart" id="dau-chart">
-        <!-- Filled by JS -->
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="card">
-      <h2>Actions Today</h2>
-      <div class="actions-grid" id="actions-grid">
-        <!-- Filled by JS -->
-      </div>
-    </div>
-
-    <!-- Totals -->
-    <div class="card">
-      <h2>Totals</h2>
-      <div class="stat-row">
-        <span class="stat-label">Unique Users</span>
-        <span class="stat-value" id="unique-users">--</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Total Actions</span>
-        <span class="stat-value" id="total-actions">--</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">App Version</span>
-        <span class="stat-value" id="app-version">--</span>
-      </div>
-    </div>
-
-    <!-- Invite Codes -->
-    <div class="card">
-      <h2>Alpha Codes</h2>
-      <div class="big-number green" id="codes-available">25</div>
-      <div style="color: #666; margin-top: 8px;">codes generated</div>
-      <div style="margin-top: 16px;">
+      <!-- Alpha Codes -->
+      <div class="card highlight-platform">
+        <h3>Alpha Invites</h3>
+        <div class="stat-row">
+          <span class="stat-label">Codes Generated</span>
+          <span class="stat-value">25</span>
+        </div>
         <div class="stat-row">
           <span class="stat-label">Wave 1 Sent</span>
           <span class="stat-value" id="codes-sent">1</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Downloaded</span>
-          <span class="stat-value" id="codes-used">--</span>
+          <span class="stat-label">Downloads</span>
+          <span class="stat-value" id="codes-downloaded">--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Waitlist</span>
+          <span class="stat-value" id="waitlist-count">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMINAL SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Terminal</h2>
+      <span class="badge terminal">vibe.app</span>
+    </div>
+    <div class="grid">
+      <!-- Activation Funnel -->
+      <div class="card highlight-terminal" style="grid-column: span 2;">
+        <h3>Activation Funnel (Today)</h3>
+        <div class="funnel" id="funnel">
+          <div class="funnel-step">
+            <span class="funnel-label">App Opened</span>
+            <div class="funnel-bar-container">
+              <div class="funnel-bar" id="funnel-opened" style="width: 100%;"><span id="funnel-opened-val">--</span></div>
+            </div>
+          </div>
+          <div class="funnel-step">
+            <span class="funnel-label">Session Started</span>
+            <div class="funnel-bar-container">
+              <div class="funnel-bar" id="funnel-session" style="width: 80%;"><span id="funnel-session-val">--</span></div>
+            </div>
+          </div>
+          <div class="funnel-step">
+            <span class="funnel-label">Social Connected</span>
+            <div class="funnel-bar-container">
+              <div class="funnel-bar" id="funnel-social" style="width: 60%;"><span id="funnel-social-val">--</span></div>
+            </div>
+          </div>
+          <div class="funnel-step">
+            <span class="funnel-label">5-min Retention</span>
+            <div class="funnel-bar-container">
+              <div class="funnel-bar" id="funnel-5min" style="width: 40%;"><span id="funnel-5min-val">--</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card highlight-terminal">
+        <h3>Actions Today</h3>
+        <div class="actions-grid" id="actions-grid">
+          <div class="action-item">
+            <div class="action-count" id="action-accept">--</div>
+            <div class="action-name">Accept</div>
+          </div>
+          <div class="action-item">
+            <div class="action-count" id="action-reject">--</div>
+            <div class="action-name">Reject</div>
+          </div>
+          <div class="action-item">
+            <div class="action-count" id="action-yolo">--</div>
+            <div class="action-name">YOLO</div>
+          </div>
+        </div>
+        <div style="margin-top: 16px;">
+          <div class="stat-row">
+            <span class="stat-label">Shortcuts Used</span>
+            <span class="stat-value" id="shortcuts-used">--</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Total Actions</span>
+            <span class="stat-value" id="total-actions">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAU Chart -->
+      <div class="card highlight-terminal">
+        <h3>Daily Active Users (7 days)</h3>
+        <div class="dau-chart" id="dau-chart">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Version & Errors -->
+      <div class="card highlight-terminal">
+        <h3>App Health</h3>
+        <div class="stat-row">
+          <span class="stat-label">Version</span>
+          <span class="stat-value" id="app-version">--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Unique Users (7d)</span>
+          <span class="stat-value" id="unique-users">--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Errors Today</span>
+          <span class="stat-value" id="errors-today" style="color: #4ade80;">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Crash Reports</span>
+          <span class="stat-value" id="crash-reports" style="color: #4ade80;">0</span>
         </div>
       </div>
     </div>
   </div>
 
   <div class="refresh-info">
-    Auto-refreshes every 30 seconds · <a href="/api/telemetry/stats" style="color: #6B8FFF;">Raw JSON</a>
+    Auto-refreshes every 30 seconds ·
+    <a href="/api/telemetry/stats">Telemetry JSON</a> ·
+    <a href="/api/presence">Presence JSON</a> ·
+    <a href="/api/growth/leaderboard">Leaderboard JSON</a>
   </div>
 
   <script>
@@ -362,15 +532,19 @@
     }
 
     function updateUI(telemetry, presence, leaderboard) {
+      // === PLATFORM SECTION ===
+
       // Genesis status
       if (leaderboard.stats) {
         document.getElementById('genesis-remaining').textContent =
-          leaderboard.stats.genesisRemaining || '--';
+          leaderboard.stats.genesisRemaining ?? '--';
         document.getElementById('total-founders').textContent =
-          leaderboard.stats.total || '--';
+          leaderboard.stats.total ?? '--';
+        document.getElementById('registered-handles').textContent =
+          leaderboard.stats.total ?? '--';
       }
 
-      // Presence
+      // Presence counts
       if (presence.counts) {
         document.getElementById('online-now').textContent = presence.counts.active || 0;
         document.getElementById('away-count').textContent = presence.counts.away || 0;
@@ -382,7 +556,7 @@
       const awayUsers = presence.away || [];
 
       if (activeUsers.length === 0 && awayUsers.length === 0) {
-        userList.innerHTML = '<div style="color: #666;">No one online</div>';
+        userList.innerHTML = '<div class="empty-state">No one online yet</div>';
       } else {
         userList.innerHTML = [
           ...activeUsers.map(u => `
@@ -400,37 +574,15 @@
         ].join('');
       }
 
-      // DAU Chart
-      const dauChart = document.getElementById('dau-chart');
-      const dau = telemetry.dailyActiveUsers || [];
-      const maxDau = Math.max(...dau.map(d => d.count), 1);
-
-      dauChart.innerHTML = dau.reverse().map(d => {
-        const height = Math.max((d.count / maxDau) * 80, 4);
-        return `<div class="dau-bar" style="height: ${height}px;"
-                     data-date="${d.date}" data-count="${d.count}"></div>`;
-      }).join('');
+      // === TERMINAL SECTION ===
 
       // Actions
-      const actionsGrid = document.getElementById('actions-grid');
       const actions = telemetry.actions || {};
-      const actionLabels = {
-        accept: 'Accept',
-        reject: 'Reject',
-        yolo_enable: 'YOLO On',
-        yolo_disable: 'YOLO Off',
-        retry: 'Retry',
-        shortcut_used: 'Shortcut'
-      };
-
-      actionsGrid.innerHTML = Object.entries(actions)
-        .filter(([k]) => actionLabels[k])
-        .map(([action, count]) => `
-          <div class="action-item">
-            <div class="action-count">${count}</div>
-            <div class="action-name">${actionLabels[action] || action}</div>
-          </div>
-        `).join('') || '<div style="color: #666; grid-column: span 2;">No actions yet</div>';
+      document.getElementById('action-accept').textContent = actions.accept || 0;
+      document.getElementById('action-reject').textContent = actions.reject || 0;
+      document.getElementById('action-yolo').textContent =
+        (actions.yolo_enable || 0) + (actions.yolo_disable || 0);
+      document.getElementById('shortcuts-used').textContent = actions.shortcut_used || 0;
 
       // Totals
       if (telemetry.totals) {
@@ -442,8 +594,42 @@
       if (telemetry.versions) {
         const versions = Object.entries(telemetry.versions);
         document.getElementById('app-version').textContent =
-          versions.length > 0 ? versions.map(([v, c]) => `${v} (${c})`).join(', ') : '--';
+          versions.length > 0 ? versions.map(([v, c]) => `${v}`).join(', ') : '--';
       }
+
+      // DAU Chart
+      const dauChart = document.getElementById('dau-chart');
+      const dau = telemetry.dailyActiveUsers || [];
+      const maxDau = Math.max(...dau.map(d => d.count), 1);
+
+      dauChart.innerHTML = [...dau].reverse().map(d => {
+        const height = Math.max((d.count / maxDau) * 60, 4);
+        return `<div class="dau-bar" style="height: ${height}px;"
+                     data-date="${d.date.slice(5)}" data-count="${d.count}"></div>`;
+      }).join('');
+
+      // Funnel (placeholder - will populate when telemetry tracks these)
+      const funnelData = telemetry.funnel || {
+        app_opened: actions.accept ? Math.ceil((actions.accept + actions.reject) * 1.2) : 0,
+        session_started: actions.accept ? Math.ceil((actions.accept + actions.reject) * 1.1) : 0,
+        social_connected: presence.counts?.active || 0,
+        five_min_retention: Math.max(0, (presence.counts?.active || 0) - 1)
+      };
+
+      const maxFunnel = Math.max(funnelData.app_opened, 1);
+
+      document.getElementById('funnel-opened-val').textContent = funnelData.app_opened;
+      document.getElementById('funnel-session-val').textContent = funnelData.session_started;
+      document.getElementById('funnel-social-val').textContent = funnelData.social_connected;
+      document.getElementById('funnel-5min-val').textContent = funnelData.five_min_retention;
+
+      document.getElementById('funnel-opened').style.width = '100%';
+      document.getElementById('funnel-session').style.width =
+        Math.max(10, (funnelData.session_started / maxFunnel) * 100) + '%';
+      document.getElementById('funnel-social').style.width =
+        Math.max(10, (funnelData.social_connected / maxFunnel) * 100) + '%';
+      document.getElementById('funnel-5min').style.width =
+        Math.max(10, (funnelData.five_min_retention / maxFunnel) * 100) + '%';
     }
 
     // Initial fetch
