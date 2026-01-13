@@ -404,8 +404,16 @@
       <span class="badge terminal">vibe.app</span>
     </div>
     <div class="grid">
+      <!-- Terminal Users -->
+      <div class="card highlight-terminal">
+        <h3>Terminal Users (24h)</h3>
+        <div class="user-list" id="terminal-user-list">
+          <div class="empty-state">No terminal users yet</div>
+        </div>
+      </div>
+
       <!-- Activation Funnel -->
-      <div class="card highlight-terminal" style="grid-column: span 2;">
+      <div class="card highlight-terminal">
         <h3>Activation Funnel (Today)</h3>
         <div class="funnel" id="funnel">
           <div class="funnel-step">
@@ -575,6 +583,27 @@
       }
 
       // === TERMINAL SECTION ===
+
+      // Terminal users
+      const terminalUserList = document.getElementById('terminal-user-list');
+      const terminalUsers = telemetry.terminalUsers || [];
+
+      if (terminalUsers.length === 0) {
+        terminalUserList.innerHTML = '<div class="empty-state">No terminal users yet</div>';
+      } else {
+        terminalUserList.innerHTML = terminalUsers.map(u => {
+          const timeAgo = u.minutesAgo < 60
+            ? `${u.minutesAgo}m ago`
+            : `${Math.round(u.minutesAgo / 60)}h ago`;
+          const isRecent = u.minutesAgo < 5;
+          return `
+            <div class="user-item">
+              <span class="user-name">@${u.username}</span>
+              <span class="user-status ${isRecent ? '' : 'away'}">${timeAgo}</span>
+            </div>
+          `;
+        }).join('');
+      }
 
       // Actions
       const actions = telemetry.actions || {};

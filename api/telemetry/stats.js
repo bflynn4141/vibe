@@ -24,6 +24,7 @@ export default async function handler(req) {
       dailyActiveUsers: [],
       actions: {},
       versions: {},
+      terminalUsers: [], // Active terminal users (last 24h)
       totals: {
         uniqueUsers: 0,
         totalActions: 0,
@@ -72,6 +73,30 @@ export default async function handler(req) {
     }
 
     stats.totals.uniqueUsers = allUsers.size;
+
+    // Get active terminal users (last 24h) with scores
+    try {
+      const terminalActive = await kv.zrange(`telemetry:terminal_active`, 0, -1, {
+        withScores: true,
+        rev: true, // Most recent first
+      });
+
+      // Parse the results (alternating member, score)
+      for (let i = 0; i < terminalActive.length; i += 2) {
+        const username = terminalActive[i];
+        const lastSeenTs = terminalActive[i + 1];
+        if (username && lastSeenTs) {
+          stats.terminalUsers.push({
+            username,
+            lastSeen: new Date(lastSeenTs).toISOString(),
+            minutesAgo: Math.round((Date.now() - lastSeenTs) / 60000),
+          });
+        }
+      }
+    } catch (e) {
+      // Terminal users tracking not yet initialized
+      console.log("Terminal users fetch error:", e);
+    }
 
     return new Response(JSON.stringify(stats, null, 2), {
       status: 200,

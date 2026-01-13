@@ -72,8 +72,28 @@ export default async function handler(req) {
     // Update aggregate counters
     const today = new Date().toISOString().split("T")[0];
 
-    // Daily active users
+    // Daily active users (hashed for privacy)
     await kv.sadd(`telemetry:dau:${today}`, hashedUserId);
+
+    // Track actual terminal users for internal dashboard (unlisted)
+    // Store username with last activity timestamp
+    if (userId && userId !== "anonymous") {
+      await kv.hset(`telemetry:terminal_users:${today}`, {
+        [userId]: JSON.stringify({
+          lastSeen: new Date().toISOString(),
+          version: version || "unknown",
+          eventCount: events.length,
+        }),
+      });
+      // Also maintain a rolling "recently active" set (last 24h)
+      await kv.zadd(`telemetry:terminal_active`, {
+        score: timestamp,
+        member: userId,
+      });
+      // Trim to last 24 hours
+      const oneDayAgo = timestamp - (24 * 60 * 60 * 1000);
+      await kv.zremrangebyscore(`telemetry:terminal_active`, 0, oneDayAgo);
+    }
 
     // Action counts
     for (const event of events) {
