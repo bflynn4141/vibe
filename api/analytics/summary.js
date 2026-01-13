@@ -12,6 +12,8 @@
  */
 
 import { getEventsSummary } from '../lib/events.js';
+import { checkRateLimit, rateLimitResponse, getClientIP, hashIP } from '../lib/ratelimit.js';
+import { setSecurityHeaders } from '../lib/security.js';
 
 // Check if KV is configured
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -29,7 +31,7 @@ async function getKV() {
 }
 
 export default async function handler(req, res) {
-  // Enable CORS
+  setSecurityHeaders(res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -40,6 +42,17 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limit: 30 requests per minute per IP
+  const clientIP = getClientIP(req);
+  const rateCheck = await checkRateLimit(`analytics:summary:${hashIP(clientIP)}`, {
+    max: 30,
+    windowMs: 60 * 1000
+  });
+
+  if (!rateCheck.success) {
+    return rateLimitResponse(res);
   }
 
   const kv = await getKV();

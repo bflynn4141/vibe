@@ -1,0 +1,112 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "/vibe API",
+    "description": "Social layer for Claude Code users",
+    "version": "0.3.0",
+    "contact": {
+      "name": "/vibe",
+      "url": "https://slashvibe.dev"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://www.slashvibe.dev/api",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service healthy"
+          }
+        }
+      }
+    },
+    "/presence": {
+      "get": {
+        "summary": "Get active users",
+        "responses": {
+          "200": {
+            "description": "List of active/away/offline users"
+          }
+        }
+      },
+      "post": {
+        "summary": "Update presence (heartbeat)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "workingOn": { "type": "string" },
+                  "project": { "type": "string" }
+                },
+                "required": ["username"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages": {
+      "get": {
+        "summary": "Get inbox",
+        "parameters": [
+          { "name": "user", "in": "query", "required": true }
+        ]
+      },
+      "post": {
+        "summary": "Send message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": { "type": "string" },
+                  "to": { "type": "string" },
+                  "text": { "type": "string" }
+                },
+                "required": ["from", "to", "text"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/board": {
+      "get": {
+        "summary": "Get board entries",
+        "parameters": [
+          { "name": "category", "in": "query" },
+          { "name": "limit", "in": "query" }
+        ]
+      },
+      "post": {
+        "summary": "Create board entry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "author": { "type": "string" },
+                  "category": { "type": "string", "enum": ["idea", "shipped", "request", "riff", "claim", "observation", "general"] },
+                  "content": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["author", "category", "content"]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -13,7 +13,22 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git restore:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(for user in fabianstelzer jiwa bagholder eli_schein)",
+      "Bash(do echo \"=== $user ===\")",
+      "Bash(done)",
+      "Bash(git ls-remote:*)",
+      "Bash(git archive:*)",
+      "Bash(tar -tf:*)",
+      "Skill(ralph-loop:help)",
+      "Bash(wc:*)",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm test:*)",
+      "Bash(node --check:*)",
+      "Bash(git -C /Users/sethstudio1/vibe-platform status --short)",
+      "Bash(gh repo view:*)",
+      "Bash(npm audit:*)"
     ]
   }
 }

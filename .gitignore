@@ -30,4 +30,12 @@ src-tauri/Cargo.lock
 # Tauri
 src-tauri/WixTools
 .vercel
+
+# Environment files (NEVER commit secrets)
+.env
+.env.*
 .env*.local
+*.pem
+credentials*.json
+*secret*
+!.env.example

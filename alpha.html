@@ -1,363 +1,486 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <title>/vibe Terminal - Alpha Access</title>
-    <meta name="description" content="Early access to VIBE Terminal - the social layer for Claude Code.">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
-            background: #000;
-            color: #fff;
-            min-height: 100vh;
-            padding: 48px 20px;
-        }
-        .container { max-width: 620px; margin: 0 auto; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>/vibe Alpha — The Terminal Party</title>
+  <meta name="description" content="Social layer for Claude Code. See who's building, message them, stay in flow.">
+  <meta property="og:title" content="/vibe Alpha — The Terminal Party">
+  <meta property="og:description" content="Social layer for Claude Code. Genesis access.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .alpha-badge {
-            display: inline-block;
-            background: linear-gradient(90deg, #6B8FFF22, #9B6BFF22);
-            border: 1px solid #6B8FFF55;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 10px;
-            letter-spacing: 1.5px;
-            color: #6B8FFF;
-            margin-bottom: 24px;
-        }
+    body {
+      background: #0A0A0A;
+      color: #fff;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
 
-        h1 { font-size: 48px; font-weight: 400; margin-bottom: 8px; letter-spacing: -2px; }
-        .tagline { font-size: 17px; color: #6B8FFF; margin-bottom: 8px; }
-        .sub { font-size: 14px; color: #999; margin-bottom: 32px; line-height: 1.6; }
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
 
-        .hero-visual {
-            background: linear-gradient(135deg, #0a0a0a 0%, #0d0d15 50%, #0a0a0a 100%);
-            border: 1px solid #222;
-            border-radius: 12px;
-            padding: 32px;
-            margin-bottom: 32px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-visual::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(ellipse at center, #6B8FFF08 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .app-icon {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, #1a1a2e, #0a0a15);
-            border: 2px solid #6B8FFF33;
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 48px;
-            box-shadow: 0 8px 32px rgba(107, 143, 255, 0.15);
-        }
-        .version-info {
-            font-size: 12px;
-            color: #888;
-        }
-        .version-info span { color: #6B8FFF; }
+    .logo {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #6B8FFF;
+    }
 
-        .download-section {
-            background: #0a0a0a;
-            border: 1px solid #6B8FFF33;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .download-title {
-            font-size: 11px;
-            color: #6B8FFF;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
-        }
-        .download-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(90deg, #6B8FFF, #5a7de8);
-            border: none;
-            border-radius: 8px;
-            padding: 16px 24px;
-            color: #000;
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-            margin-bottom: 12px;
-            width: 100%;
-        }
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(107, 143, 255, 0.3);
-        }
-        .download-btn .icon { font-size: 20px; }
-        .download-btn .details {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 2px;
-        }
-        .download-btn .details small {
-            font-size: 10px;
-            font-weight: 400;
-            opacity: 0.7;
-        }
+    .tagline {
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 40px;
+    }
 
-        .alt-downloads {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .alt-btn {
-            flex: 1;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 6px;
-            padding: 12px 16px;
-            color: #888;
-            font-family: inherit;
-            font-size: 11px;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        .alt-btn:hover {
-            background: #1a1a1a;
-            border-color: #6B8FFF55;
-            color: #fff;
-        }
-        .alt-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
 
-        .features {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .feature {
-            background: #0a0a0a;
-            border: 1px solid #181818;
-            border-radius: 8px;
-            padding: 16px;
-        }
-        .feature-icon { font-size: 20px; margin-bottom: 8px; }
-        .feature-title { font-size: 12px; color: #fff; margin-bottom: 4px; }
-        .feature-desc { font-size: 11px; color: #888; line-height: 1.5; }
+    .hero h1 {
+      font-size: 28px;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
 
-        .requirements {
-            background: #0a0a0a;
-            border: 1px solid #222;
-            border-radius: 8px;
-            padding: 16px 20px;
-            margin-bottom: 32px;
-            font-size: 12px;
-            color: #888;
-        }
-        .requirements strong { color: #bbb; }
+    .hero p {
+      color: #aaa;
+      font-size: 16px;
+      line-height: 1.6;
+    }
 
-        .changelog {
-            border: 1px solid #222;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 32px;
-        }
-        .changelog-title {
-            font-size: 11px;
-            color: #6B8FFF;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-        .changelog-item {
-            font-size: 12px;
-            color: #ccc;
-            padding: 8px 0;
-            border-bottom: 1px solid #1a1a1a;
-        }
-        .changelog-item:last-child { border-bottom: none; }
-        .changelog-item .tag {
-            display: inline-block;
-            background: #6B8FFF22;
-            color: #6B8FFF;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 9px;
-            margin-right: 8px;
-        }
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin: 32px 0;
+      padding: 24px;
+      background: #111;
+      border-radius: 8px;
+      border: 1px solid #222;
+    }
 
-        .warning {
-            background: #1a1a0a;
-            border: 1px solid #554400;
-            border-radius: 8px;
-            padding: 16px 20px;
-            margin-bottom: 32px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-        .warning-icon { font-size: 18px; }
-        .warning-text { font-size: 12px; color: #ccaa00; line-height: 1.6; }
+    .stat {
+      text-align: center;
+    }
 
-        .footer {
-            font-size: 11px;
-            color: #666;
-            padding-top: 20px;
-            border-top: 1px solid #222;
-        }
-        .footer a { color: #888; text-decoration: none; }
-        .footer a:hover { color: #6B8FFF; }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #6B8FFF;
+    }
 
-        @media (max-width: 520px) {
-            body { padding: 32px 16px; }
-            h1 { font-size: 36px; }
-            .features { grid-template-columns: 1fr; }
-            .alt-downloads { flex-direction: column; }
-        }
-    </style>
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .code-form {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .code-form h2 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .code-input {
+      flex: 1;
+      background: #0A0A0A;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .code-input:focus {
+      outline: none;
+      border-color: #6B8FFF;
+    }
+
+    .code-input::placeholder {
+      color: #555;
+      text-transform: none;
+    }
+
+    .btn {
+      background: #6B8FFF;
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: bold;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #8BA8FF;
+    }
+
+    .btn:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .message.error {
+      background: #2a1515;
+      border: 1px solid #5c2828;
+      color: #ff6b6b;
+      display: block;
+    }
+
+    .message.success {
+      background: #152a15;
+      border: 1px solid #285c28;
+      color: #6bff6b;
+      display: block;
+    }
+
+    .waitlist {
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid #222;
+    }
+
+    .waitlist p {
+      color: #666;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .waitlist-form {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .waitlist-form.show {
+      display: flex;
+    }
+
+    .waitlist-input {
+      background: #0A0A0A;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #fff;
+    }
+
+    .waitlist-input:focus {
+      outline: none;
+      border-color: #6B8FFF;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: #6B8FFF;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      text-decoration: underline;
+    }
+
+    .features {
+      margin-top: 48px;
+    }
+
+    .features h3 {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: #111;
+      border-radius: 4px;
+    }
+
+    .feature-icon {
+      font-size: 20px;
+    }
+
+    .feature-text h4 {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .feature-text p {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .footer {
+      margin-top: 48px;
+      text-align: center;
+      color: #444;
+      font-size: 12px;
+    }
+
+    .footer a {
+      color: #666;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: #888;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .loading {
+      animation: pulse 1s infinite;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="alpha-badge">EARLY ALPHA ACCESS</div>
-
-        <h1>/vibe Terminal</h1>
-        <p class="tagline">The social layer for Claude Code.</p>
-        <p class="sub">Native terminal app with built-in presence, DMs, session replay, and multiplayer games. For builders who live in the terminal.</p>
-
-        <div class="hero-visual">
-            <div class="app-icon">⚡</div>
-            <div class="version-info">
-                Version <span>0.1.0-alpha</span> &middot; January 2026
-            </div>
-        </div>
-
-        <div class="download-section">
-            <div class="download-title">Download for macOS</div>
-            <a href="#" class="download-btn" id="main-download" onclick="trackDownload('dmg')">
-                <span class="icon"></span>
-                <div class="details">
-                    <span>Download Vibe.dmg</span>
-                    <small>macOS 10.15+ &middot; Apple Silicon & Intel</small>
-                </div>
-                <span style="font-size: 12px; opacity: 0.7;">~45 MB</span>
-            </a>
-
-            <div class="alt-downloads">
-                <a href="#" class="alt-btn" onclick="trackDownload('arm64')">
-                    Apple Silicon (M1/M2/M3)
-                </a>
-                <a href="#" class="alt-btn" onclick="trackDownload('x64')">
-                    Intel (x64)
-                </a>
-                <a href="#" class="alt-btn disabled" title="Coming soon">
-                    Windows (soon)
-                </a>
-            </div>
-        </div>
-
-        <div class="warning">
-            <span class="warning-icon">⚠️</span>
-            <div class="warning-text">
-                <strong>Alpha software.</strong> Things will break. Data may be lost.
-                This is for early testers willing to report bugs and help shape the product.
-                <br><br>
-                To open: Right-click the app → Open (first time requires bypassing Gatekeeper)
-            </div>
-        </div>
-
-        <div class="features">
-            <div class="feature">
-                <div class="feature-icon">💬</div>
-                <div class="feature-title">Real-time DMs</div>
-                <div class="feature-desc">Message other vibecoders without leaving your session. Context-aware conversations.</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">👀</div>
-                <div class="feature-title">Watch Mode</div>
-                <div class="feature-desc">See what others are building in real-time. Learn by watching experts debug.</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🎮</div>
-                <div class="feature-title">Terminal Games</div>
-                <div class="feature-desc">Tic-tac-toe, word games, and more. Play with humans and AI agents.</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">✨</div>
-                <div class="feature-title">VIBE Mode</div>
-                <div class="feature-desc">Playful UI overlays for Claude prompts. Transform dry dialogs into delightful interactions.</div>
-            </div>
-        </div>
-
-        <div class="changelog">
-            <div class="changelog-title">What's New in 0.1.0</div>
-            <div class="changelog-item">
-                <span class="tag">NEW</span>
-                VIBE personality layer - playful prompt transformations
-            </div>
-            <div class="changelog-item">
-                <span class="tag">NEW</span>
-                Verb visualizer - animated thinking indicators (Stewing, Beboppin, etc.)
-            </div>
-            <div class="changelog-item">
-                <span class="tag">NEW</span>
-                Social sidebar with presence and DMs
-            </div>
-            <div class="changelog-item">
-                <span class="tag">NEW</span>
-                Session recording and replay
-            </div>
-            <div class="changelog-item">
-                <span class="tag">NEW</span>
-                Watch mode for live session streaming
-            </div>
-        </div>
-
-        <div class="requirements">
-            <strong>Requirements:</strong><br>
-            &middot; macOS 10.15 (Catalina) or later<br>
-            &middot; Claude Code installed (npm install -g @anthropic-ai/claude-code)<br>
-            &middot; /vibe MCP server installed (optional but recommended)
-        </div>
-
-        <div class="footer">
-            <a href="/">Back to /vibe</a> &middot;
-            <a href="https://github.com/brightseth/vibe-terminal">Source</a> &middot;
-            <a href="/community">Community</a> &middot;
-            <a href="mailto:seth@slashvibe.dev">Report Bug</a>
-        </div>
+  <div class="container">
+    <div class="hero">
+      <div class="logo">/vibe</div>
+      <div class="tagline">The Terminal Party</div>
+      <h1>Social layer for Claude Code</h1>
+      <p>See who's building right now. Message them. Stay in flow.</p>
     </div>
 
-    <script>
-        // Track downloads (placeholder - connect to analytics)
-        function trackDownload(type) {
-            console.log('Download tracked:', type);
-            // Future: Connect to analytics
-            // Future: Serve actual DMG files
-            alert('DMG builds coming soon! For now, build from source:\n\ngit clone https://github.com/brightseth/vibe-terminal\ncd vibe-terminal\nnpm install\nnpm run tauri build');
-            return false;
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="founders-count">51</div>
+        <div class="stat-label">Founders</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="spots-left">49</div>
+        <div class="stat-label">Genesis Spots</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="online-now">13</div>
+        <div class="stat-label">Online Now</div>
+      </div>
+    </div>
+
+    <div class="code-form">
+      <h2>Enter your invite code</h2>
+      <div class="input-group">
+        <input type="text" class="code-input" id="invite-code" placeholder="VIBE-XXXXX-XXX" autocomplete="off">
+        <button class="btn" id="download-btn" onclick="validateAndDownload()">Download</button>
+      </div>
+      <div class="message" id="message"></div>
+    </div>
+
+    <div class="waitlist">
+      <p>Don't have a code?</p>
+      <button class="link-btn" onclick="showWaitlist()">Join the waitlist</button>
+      <div class="waitlist-form" id="waitlist-form">
+        <input type="email" class="waitlist-input" id="waitlist-email" placeholder="your@email.com">
+        <input type="text" class="waitlist-input" id="waitlist-twitter" placeholder="@twitter (optional)">
+        <button class="btn" onclick="joinWaitlist()">Join Waitlist</button>
+      </div>
+    </div>
+
+    <div class="features">
+      <h3>Founders get</h3>
+      <div class="feature-list">
+        <div class="feature">
+          <span class="feature-icon">@</span>
+          <div class="feature-text">
+            <h4>Claim your handle</h4>
+            <p>Your @username, forever</p>
+          </div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">3</span>
+          <div class="feature-text">
+            <h4>Invite codes</h4>
+            <p>Bring your friends to the party</p>
+          </div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">★</span>
+          <div class="feature-text">
+            <h4>Founder badge</h4>
+            <p>Permanent recognition</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><a href="/">slashvibe.dev</a> · <a href="/why-invites">Why invites?</a> · <a href="/history">History</a></p>
+    </div>
+  </div>
+
+  <script>
+    // Fetch live stats
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/growth/leaderboard');
+        const data = await res.json();
+        if (data.stats) {
+          document.getElementById('founders-count').textContent = data.stats.total || 51;
+          document.getElementById('spots-left').textContent = data.stats.genesisRemaining || 49;
         }
 
-        // Log page view
-        fetch('/api/health').catch(() => {});
-    </script>
+        const presRes = await fetch('/api/presence');
+        const presData = await presRes.json();
+        if (presData.counts) {
+          document.getElementById('online-now').textContent = presData.counts.active || 0;
+        }
+      } catch (e) {
+        console.log('Stats fetch failed', e);
+      }
+    }
+
+    fetchStats();
+
+    async function validateAndDownload() {
+      const code = document.getElementById('invite-code').value.trim();
+      const btn = document.getElementById('download-btn');
+      const msg = document.getElementById('message');
+
+      if (!code) {
+        msg.textContent = 'Please enter an invite code';
+        msg.className = 'message error';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Validating...';
+      msg.className = 'message';
+
+      try {
+        // Validate first
+        const valRes = await fetch('/api/alpha/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        const valData = await valRes.json();
+
+        if (!valData.valid) {
+          msg.textContent = valData.error || 'Invalid invite code. Check your code and try again.';
+          msg.className = 'message error';
+          btn.disabled = false;
+          btn.textContent = 'Download';
+          return;
+        }
+
+        // Valid - trigger download
+        msg.textContent = 'Code accepted! Starting download...';
+        msg.className = 'message success';
+        btn.textContent = 'Downloading...';
+
+        // Trigger download
+        window.location.href = `/api/alpha/download?code=${encodeURIComponent(code)}`;
+
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = 'Download';
+          msg.innerHTML = 'Download started! Check your Downloads folder.<br><br><strong>First launch:</strong> macOS will block it (unsigned alpha).<br>→ System Settings → Privacy & Security → "Open Anyway"';
+        }, 2000);
+
+      } catch (e) {
+        msg.textContent = 'Something went wrong. Please try again.';
+        msg.className = 'message error';
+        btn.disabled = false;
+        btn.textContent = 'Download';
+      }
+    }
+
+    function showWaitlist() {
+      document.getElementById('waitlist-form').classList.add('show');
+    }
+
+    async function joinWaitlist() {
+      const email = document.getElementById('waitlist-email').value.trim();
+      const twitter = document.getElementById('waitlist-twitter').value.trim();
+      const msg = document.getElementById('message');
+
+      if (!email) {
+        msg.textContent = 'Please enter your email';
+        msg.className = 'message error';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/alpha/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, twitter })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          msg.textContent = data.message || 'You\'re on the list!';
+          msg.className = 'message success';
+          document.getElementById('waitlist-form').innerHTML = '<p style="color:#6bff6b">✓ You\'re on the waitlist!</p>';
+        } else {
+          msg.textContent = data.error || 'Failed to join waitlist';
+          msg.className = 'message error';
+        }
+      } catch (e) {
+        msg.textContent = 'Something went wrong. Please try again.';
+        msg.className = 'message error';
+      }
+    }
+
+    // Enter key triggers download
+    document.getElementById('invite-code').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') validateAndDownload();
+    });
+  </script>
 </body>
 </html>

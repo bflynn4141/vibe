@@ -9,6 +9,9 @@
  */
 
 import { logEvent } from './lib/events.js';
+import { checkRateLimit, rateLimitResponse, getClientIP, hashIP } from './lib/ratelimit.js';
+import { sanitizeBoardPost } from './lib/sanitize.js';
+import { setSecurityHeaders } from './lib/security.js';
 
 // Check if KV is configured
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -206,6 +209,8 @@ async function createEntry({ author, category, content, tags = [] }) {
  * Main handler - supports GET and POST
  */
 export default async function handler(req, res) {
+  // Security headers
+  setSecurityHeaders(res);
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -217,14 +222,35 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { author, category, content, tags } = req.body;
+      // Sanitize and validate input
+      const validation = sanitizeBoardPost(req.body);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid input',
+          details: validation.errors
+        });
+      }
+
+      const { author, category, content, tags } = validation.sanitized;
+
+      // Rate limit: 10 posts per hour per user
+      const rateCheck = await checkRateLimit(`board:post:${author}`, {
+        max: 10,
+        windowMs: 60 * 60 * 1000
+      });
+
+      if (!rateCheck.success) {
+        return rateLimitResponse(res);
+      }
+
       const result = await createEntry({ author, category, content, tags });
       return res.status(200).json(result);
     } catch (error) {
-      console.error('[board] POST error:', error.message);
+      console.error('[board] POST error:', error);
       return res.status(400).json({
         success: false,
-        error: error.message
+        error: 'Failed to create entry'
       });
     }
   }

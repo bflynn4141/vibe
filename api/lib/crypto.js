@@ -369,7 +369,15 @@ export function verifyRevocationProof(proof, recoveryPublicKeyRaw) {
 // Session Tokens
 // ============================================================
 
-const SESSION_SECRET = process.env.VIBE_SESSION_SECRET || process.env.VIBE_SYSTEM_SECRET || 'dev-secret';
+const SESSION_SECRET = process.env.VIBE_SESSION_SECRET || process.env.VIBE_SYSTEM_SECRET;
+if (!SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('[crypto] FATAL: VIBE_SESSION_SECRET or VIBE_SYSTEM_SECRET must be set in production');
+}
+// Fail-safe for missing secret (dev only) - still prevents silent failures
+const EFFECTIVE_SESSION_SECRET = SESSION_SECRET || (() => {
+  console.warn('[crypto] WARNING: Using insecure dev secret - DO NOT USE IN PRODUCTION');
+  return 'INSECURE_DEV_ONLY_' + Date.now();
+})();
 const SESSION_TTL = 60 * 60 * 1000; // 1 hour
 
 /**
@@ -383,7 +391,7 @@ export function generateSessionToken(handle, signingKey) {
   const expiresAt = Date.now() + SESSION_TTL;
   const payload = `${handle}:${signingKey}:${expiresAt}`;
 
-  const hmac = crypto.createHmac('sha256', SESSION_SECRET);
+  const hmac = crypto.createHmac('sha256', EFFECTIVE_SESSION_SECRET);
   hmac.update(payload);
   const signature = hmac.digest('base64url');
 
@@ -420,7 +428,7 @@ export function verifySessionToken(token, expectedHandle, expectedKey) {
   }
 
   // Verify HMAC
-  const hmac = crypto.createHmac('sha256', SESSION_SECRET);
+  const hmac = crypto.createHmac('sha256', EFFECTIVE_SESSION_SECRET);
   hmac.update(payload);
   const expectedSig = hmac.digest('base64url');
 

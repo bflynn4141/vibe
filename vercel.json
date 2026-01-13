@@ -81,7 +81,7 @@
     { "source": "/api/alpha/validate", "destination": "/api/alpha/validate.js" },
     { "source": "/api/alpha/waitlist", "destination": "/api/alpha/waitlist.js" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/docs", "destination": "/docs.html" },
+    { "source": "/docs", "destination": "/api/docs" },
     { "source": "/chronicle", "destination": "/chronicle.html" },
     { "source": "/leaderboard", "destination": "/leaderboard.html" },
     { "source": "/status", "destination": "/status.html" },

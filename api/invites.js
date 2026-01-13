@@ -18,11 +18,15 @@
 import crypto from 'crypto';
 import { getHandleRecord, claimHandle } from './lib/handles.js';
 import { logEvent } from './lib/events.js';
+import { setSecurityHeaders } from './lib/security.js';
 
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
 // ============ INLINE AUTH ============
-const AUTH_SECRET = process.env.VIBE_AUTH_SECRET || 'dev-secret-change-in-production';
+const AUTH_SECRET = process.env.VIBE_AUTH_SECRET;
+if (!AUTH_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('[invites] FATAL: VIBE_AUTH_SECRET must be set in production');
+}
 
 function extractToken(req) {
   const authHeader = req.headers?.authorization || req.headers?.Authorization;
@@ -77,6 +81,8 @@ const CODES_PER_TIER = {
 const CODE_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default async function handler(req, res) {
+  // Security headers
+  setSecurityHeaders(res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -222,133 +228,158 @@ export default async function handler(req, res) {
     const normalizedCode = code.toUpperCase().trim();
     const normalizedHandle = handle.toLowerCase().trim();
 
-    // Check if code exists and is valid
-    const codeData = await kv.hget('vibe:invites', normalizedCode);
-    if (!codeData) {
-      return res.status(404).json({
+    // Acquire distributed lock to prevent race condition (TOCTOU)
+    // Lock expires after 30 seconds to prevent deadlock
+    const lockKey = `lock:invite:${normalizedCode}`;
+    const lockAcquired = await kv.set(lockKey, Date.now(), { nx: true, ex: 30 });
+
+    if (!lockAcquired) {
+      return res.status(409).json({
         success: false,
-        error: 'Invalid invite code'
+        error: 'This code is being processed. Please try again.',
+        retry: true
       });
     }
 
-    const invite = typeof codeData === 'string' ? JSON.parse(codeData) : codeData;
-
-    if (invite.status !== 'available') {
-      return res.status(400).json({
-        success: false,
-        error: 'This code has already been used'
-      });
-    }
-
-    if (invite.expires_at_ts < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        error: 'This code has expired'
-      });
-    }
-
-    // Try to claim the handle
-    const claimResult = await claimHandle(kv, normalizedHandle, {
-      one_liner: one_liner || 'Invited to /vibe',
-      invited_by: invite.created_by,
-      invite_code: normalizedCode
-    });
-
-    if (!claimResult.success) {
-      return res.status(400).json({
-        success: false,
-        error: claimResult.error,
-        message: claimResult.message,
-        suggestions: claimResult.suggestions
-      });
-    }
-
-    // Mark invite as used
-    invite.used_by = normalizedHandle;
-    invite.used_at = new Date().toISOString();
-    invite.status = 'used';
-    await kv.hset('vibe:invites', { [normalizedCode]: JSON.stringify(invite) });
-
-    // Grant the inviter a bonus code for successful invite
-    const inviterCodesKey = 'vibe:invites:by:' + invite.created_by;
-    const bonusCode = generateCode(invite.created_by);
-    const bonusExpires = Date.now() + CODE_EXPIRY_MS;
-
-    const bonusInvite = {
-      code: bonusCode,
-      created_by: invite.created_by,
-      created_at: new Date().toISOString(),
-      created_at_ts: Date.now(),
-      expires_at: new Date(bonusExpires).toISOString(),
-      expires_at_ts: bonusExpires,
-      used_by: null,
-      used_at: null,
-      status: 'available',
-      bonus_for_inviting: normalizedHandle
-    };
-
-    await kv.hset('vibe:invites', { [bonusCode]: JSON.stringify(bonusInvite) });
-    await kv.sadd(inviterCodesKey, bonusCode);
-
-    // Send welcome DM to new user (fire and forget)
     try {
-      const presenceData = await kv.hgetall('vibe:presence') || {};
-      const onlineUsers = Object.entries(presenceData)
-        .filter(([h, data]) => {
-          if (h === normalizedHandle || h === 'vibe' || h === 'solienne') return false;
-          const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-          const lastSeen = new Date(parsed.lastSeen || 0).getTime();
-          return Date.now() - lastSeen < 60 * 60 * 1000;
-        })
-        .slice(0, 3)
-        .map(([h]) => `@${h}`);
-
-      let welcomeText = `Welcome to /vibe, @${normalizedHandle}! `;
-      if (claimResult.genesis_number) {
-        welcomeText += `You're Genesis #${claimResult.genesis_number}. `;
+      // Check if code exists and is valid (inside the lock)
+      const codeData = await kv.hget('vibe:invites', normalizedCode);
+      if (!codeData) {
+        return res.status(404).json({
+          success: false,
+          error: 'Invalid invite code'
+        });
       }
-      welcomeText += `Thanks to @${invite.created_by} for the invite.\n\n`;
-      welcomeText += `Quick start:\n`;
-      welcomeText += `• Post your first ship (share what you're building)\n`;
-      welcomeText += `• Say hi to someone online\n`;
-      welcomeText += `• Build something cool and share the link\n\n`;
-      if (onlineUsers.length > 0) {
-        welcomeText += `Currently online: ${onlineUsers.join(', ')}\n\n`;
-      }
-      welcomeText += `Type "vibe help" anytime. Happy building!`;
 
-      const messageId = `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-      const welcomeMessage = {
-        id: messageId,
-        from: 'vibe',
-        to: normalizedHandle,
-        text: welcomeText,
-        createdAt: new Date().toISOString(),
-        read: false,
-        type: 'welcome'
+      const invite = typeof codeData === 'string' ? JSON.parse(codeData) : codeData;
+
+      if (invite.status !== 'available') {
+        return res.status(400).json({
+          success: false,
+          error: 'This code has already been used'
+        });
+      }
+
+      if (invite.expires_at_ts < Date.now()) {
+        return res.status(400).json({
+          success: false,
+          error: 'This code has expired'
+        });
+      }
+
+      // Try to claim the handle
+      const claimResult = await claimHandle(kv, normalizedHandle, {
+        one_liner: one_liner || 'Invited to /vibe',
+        invited_by: invite.created_by,
+        invite_code: normalizedCode
+      });
+
+      if (!claimResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: claimResult.error,
+          message: claimResult.message,
+          suggestions: claimResult.suggestions
+        });
+      }
+
+      // Mark invite as used
+      invite.used_by = normalizedHandle;
+      invite.used_at = new Date().toISOString();
+      invite.status = 'used';
+      await kv.hset('vibe:invites', { [normalizedCode]: JSON.stringify(invite) });
+
+      // Grant the inviter a bonus code for successful invite
+      const inviterCodesKey = 'vibe:invites:by:' + invite.created_by;
+      const bonusCode = generateCode(invite.created_by);
+      const bonusExpires = Date.now() + CODE_EXPIRY_MS;
+
+      const bonusInvite = {
+        code: bonusCode,
+        created_by: invite.created_by,
+        created_at: new Date().toISOString(),
+        created_at_ts: Date.now(),
+        expires_at: new Date(bonusExpires).toISOString(),
+        expires_at_ts: bonusExpires,
+        used_by: null,
+        used_at: null,
+        status: 'available',
+        bonus_for_inviting: normalizedHandle
       };
 
-      await kv.lpush(`inbox:${normalizedHandle}`, JSON.stringify(welcomeMessage));
-      await kv.ltrim(`inbox:${normalizedHandle}`, 0, 999);
-    } catch (welcomeErr) {
-      console.error('[invites/redeem] Welcome message error:', welcomeErr);
-      // Don't fail the registration if welcome fails
+      await kv.hset('vibe:invites', { [bonusCode]: JSON.stringify(bonusInvite) });
+      await kv.sadd(inviterCodesKey, bonusCode);
+
+      // Send welcome DM to new user (fire and forget)
+      try {
+        const presenceData = await kv.hgetall('vibe:presence') || {};
+        const onlineUsers = Object.entries(presenceData)
+          .filter(([h, data]) => {
+            if (h === normalizedHandle || h === 'vibe' || h === 'solienne') return false;
+            const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+            const lastSeen = new Date(parsed.lastSeen || 0).getTime();
+            return Date.now() - lastSeen < 60 * 60 * 1000;
+          })
+          .slice(0, 3)
+          .map(([h]) => `@${h}`);
+
+        let welcomeText = `Welcome to /vibe, @${normalizedHandle}! `;
+        if (claimResult.genesis_number) {
+          welcomeText += `You're Genesis #${claimResult.genesis_number}. `;
+        }
+        welcomeText += `Thanks to @${invite.created_by} for the invite.\n\n`;
+        welcomeText += `Quick start:\n`;
+        welcomeText += `• Post your first ship (share what you're building)\n`;
+        welcomeText += `• Say hi to someone online\n`;
+        welcomeText += `• Build something cool and share the link\n\n`;
+        if (onlineUsers.length > 0) {
+          welcomeText += `Currently online: ${onlineUsers.join(', ')}\n\n`;
+        }
+        welcomeText += `Type "vibe help" anytime. Happy building!`;
+
+        const messageId = `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        const welcomeMessage = {
+          id: messageId,
+          from: 'vibe',
+          to: normalizedHandle,
+          text: welcomeText,
+          createdAt: new Date().toISOString(),
+          read: false,
+          type: 'welcome'
+        };
+
+        await kv.lpush(`inbox:${normalizedHandle}`, JSON.stringify(welcomeMessage));
+        await kv.ltrim(`inbox:${normalizedHandle}`, 0, 999);
+      } catch (welcomeErr) {
+        console.error('[invites/redeem] Welcome message error:', welcomeErr);
+        // Don't fail the registration if welcome fails
+      }
+
+      // Log analytics event
+      await logEvent(kv, 'invite_redeemed', normalizedHandle, {
+        code: normalizedCode,
+        inviter: invite.created_by,
+        genesis_number: claimResult.genesis_number
+      });
+
+      return res.status(200).json({
+        success: true,
+        handle: normalizedHandle,
+        inviter: invite.created_by,
+        genesis_number: claimResult.genesis_number,
+        message: 'Welcome to /vibe! You were invited by @' + invite.created_by
+      });
+
+    } catch (error) {
+      console.error('[invites/redeem] Error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to redeem invite'
+      });
+    } finally {
+      // Always release the lock
+      await kv.del(lockKey);
     }
-
-    // Log analytics event
-    await logEvent(kv, 'invite_redeemed', normalizedHandle, {
-      code: normalizedCode,
-      inviter: invite.created_by,
-      genesis_number: claimResult.genesis_number
-    });
-
-    return res.status(200).json({
-      success: true,
-      handle: normalizedHandle,
-      inviter: invite.created_by,
-      genesis_number: claimResult.genesis_number,
-      message: 'Welcome to /vibe! You were invited by @' + invite.created_by
-    });
   }
 
   // GET /api/invites?code=X — Check if code is valid
@@ -386,16 +417,46 @@ export default async function handler(req, res) {
     });
   }
 
-  // GET /api/invites/my — List my codes
+  // GET /api/invites/my — List my codes (requires auth)
   if (req.method === 'GET' && path === '/api/invites/my') {
-    const handle = req.query.handle?.toLowerCase().trim();
-
-    if (!handle) {
-      return res.status(400).json({
+    // Require token authentication - derive handle from token, don't trust query
+    const token = extractToken(req);
+    if (!token) {
+      return res.status(401).json({
         success: false,
-        error: 'Handle required'
+        error: 'Authentication required. Include Authorization: Bearer <token> header.'
       });
     }
+
+    // Parse token to get sessionId
+    const parts = token.split('.');
+    if (parts.length !== 2) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token format'
+      });
+    }
+
+    const [sessionId] = parts;
+    const session = await getSession(kv, sessionId);
+
+    if (!session) {
+      return res.status(401).json({
+        success: false,
+        error: 'Session expired or invalid. Please re-authenticate.'
+      });
+    }
+
+    // Use handle FROM TOKEN, not from query (prevents info disclosure)
+    let handle = session.handle;
+    if (!handle) {
+      return res.status(401).json({
+        success: false,
+        error: 'Session does not contain handle'
+      });
+    }
+
+    handle = handle.toLowerCase().trim();
 
     // Get user record to determine max codes
     const userRecord = await getHandleRecord(kv, handle);

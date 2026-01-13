@@ -12,6 +12,10 @@
  * GET /api/presence - See who's active
  */
 
+import { checkRateLimit, rateLimitResponse } from './lib/ratelimit.js';
+import { sanitizeHandle, sanitizeContent } from './lib/sanitize.js';
+import { setSecurityHeaders } from './lib/security.js';
+
 // Check if KV is configured via environment variables
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
@@ -152,6 +156,8 @@ function getBuilderMode(presence) {
 }
 
 export default async function handler(req, res) {
+  // Security headers
+  setSecurityHeaders(res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -171,18 +177,47 @@ export default async function handler(req, res) {
       });
     }
 
-    const user = username.toLowerCase().replace('@', '');
+    // Sanitize handle
+    const handleResult = sanitizeHandle(username);
+    if (!handleResult.valid) {
+      return res.status(400).json({
+        success: false,
+        error: handleResult.error
+      });
+    }
+    const user = handleResult.sanitized;
+
+    // Rate limit: 60 heartbeats per minute per user (generous for active sessions)
+    const rateCheck = await checkRateLimit(`presence:heartbeat:${user}`, {
+      max: 60,
+      windowMs: 60 * 1000
+    });
+
+    if (!rateCheck.success) {
+      return rateLimitResponse(res);
+    }
 
     // Get existing data to preserve fields
     const existing = await getPresence(user) || {};
+
+    // Sanitize user-provided content to prevent XSS
+    const sanitizedWorkingOn = workingOn
+      ? sanitizeContent(workingOn, 200).sanitized || 'Building something'
+      : existing.workingOn || 'Building something';
+    const sanitizedProject = project
+      ? sanitizeContent(project, 100).sanitized
+      : existing.project || null;
+    const sanitizedLocation = location
+      ? sanitizeContent(location, 50).sanitized
+      : existing.location || null;
 
     const now = new Date().toISOString();
     const presenceData = {
       username: user,
       x: existing.x || user,
-      workingOn: workingOn || existing.workingOn || 'Building something',
-      project: project || existing.project || null,
-      location: location || existing.location || null,
+      workingOn: sanitizedWorkingOn,
+      project: sanitizedProject,
+      location: sanitizedLocation,
       firstSeen: existing.firstSeen || now,  // Track session start
       lastSeen: now,
       dna: existing.dna || { top: 'platform' }

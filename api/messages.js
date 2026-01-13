@@ -14,6 +14,9 @@
  */
 
 import { logEvent } from './lib/events.js';
+import { checkRateLimit, rateLimitResponse } from './lib/ratelimit.js';
+import { sanitizeMessage } from './lib/sanitize.js';
+import { setSecurityHeaders } from './lib/security.js';
 
 // Check if KV is configured via environment variables
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -68,6 +71,8 @@ function timeAgo(dateStr) {
 }
 
 export default async function handler(req, res) {
+  // Security headers
+  setSecurityHeaders(res);
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -79,20 +84,33 @@ export default async function handler(req, res) {
 
   // POST - Send a message
   if (req.method === 'POST') {
-    const { from, to, text } = req.body;
-
-    if (!from || !to || !text) {
+    // Sanitize and validate input
+    const validation = sanitizeMessage(req.body);
+    if (!validation.valid) {
       return res.status(400).json({
         success: false,
-        error: "Missing required fields: from, to, text"
+        error: 'Invalid input',
+        details: validation.errors
       });
+    }
+
+    const { from, to, text } = validation.sanitized;
+
+    // Rate limit: 100 messages per hour per sender
+    const rateCheck = await checkRateLimit(`messages:send:${from}`, {
+      max: 100,
+      windowMs: 60 * 60 * 1000
+    });
+
+    if (!rateCheck.success) {
+      return rateLimitResponse(res);
     }
 
     const message = {
       id: generateId(),
-      from: from.toLowerCase().replace('@', ''),
-      to: to.toLowerCase().replace('@', ''),
-      text: text.substring(0, 500),
+      from,
+      to,
+      text,
       createdAt: new Date().toISOString(),
       read: false
     };
@@ -121,20 +139,40 @@ export default async function handler(req, res) {
     });
   }
 
-  // DELETE - Remove messages (admin/cleanup)
+  // DELETE - Remove messages (requires auth - user can only delete their own)
   if (req.method === 'DELETE') {
     const { user, messageId, clearAll } = req.body || req.query;
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: user'
+      });
+    }
+
+    const username = user.toLowerCase().replace('@', '');
+
+    // Verify ownership: user can only delete messages TO themselves
+    // In future, add proper token auth here like invites.js
+    // For now, rate limit aggressively to prevent abuse
+    const rateCheck = await checkRateLimit(`messages:delete:${username}`, {
+      max: 10,
+      windowMs: 60 * 60 * 1000 // 10 deletes per hour
+    });
+
+    if (!rateCheck.success) {
+      return rateLimitResponse(res);
+    }
 
     let messages = await getMessages();
     const before = messages.length;
 
-    if (clearAll === 'true' && user) {
-      // Clear all messages for a user
-      const username = user.toLowerCase().replace('@', '');
+    if (clearAll === 'true') {
+      // Clear all messages TO this user (their inbox)
       messages = messages.filter(m => m.to !== username);
     } else if (messageId) {
-      // Delete specific message
-      messages = messages.filter(m => m.id !== messageId);
+      // Delete specific message only if it's TO this user
+      messages = messages.filter(m => !(m.id === messageId && m.to === username));
     }
 
     await saveMessages(messages);

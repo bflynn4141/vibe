@@ -66,33 +66,30 @@ export async function checkRateLimit(key, { max = 100, windowMs = 60000 }) {
     try {
       // Use Redis for distributed rate limiting
       const kvKey = `ratelimit:${key}`;
+      const windowSec = Math.ceil(windowMs / 1000);
 
-      // Get current count
-      const current = await kv.get(kvKey);
-      const count = current ? parseInt(current) : 0;
+      // ATOMIC: Increment first, then check (prevents race condition)
+      // Two concurrent requests both incrementing ensures correct count
+      const count = await kv.incr(kvKey);
 
-      if (count >= max) {
-        // Rate limited
+      // Set expiration on first request (count === 1)
+      if (count === 1) {
+        await kv.expire(kvKey, windowSec);
+      }
+
+      // Check if over limit AFTER incrementing
+      if (count > max) {
         const ttl = await kv.ttl(kvKey);
         return {
           success: false,
           remaining: 0,
-          reset: now + (ttl * 1000)
+          reset: now + (ttl > 0 ? ttl * 1000 : windowMs)
         };
-      }
-
-      // Increment count
-      if (count === 0) {
-        // First request - set with expiration
-        await kv.set(kvKey, 1, { px: windowMs });
-      } else {
-        // Increment existing
-        await kv.incr(kvKey);
       }
 
       return {
         success: true,
-        remaining: max - count - 1,
+        remaining: max - count,
         reset: now + windowMs
       };
 
