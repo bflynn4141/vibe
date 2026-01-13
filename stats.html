@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>/vibe Stats — Internal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0A0A0A;
+      color: #fff;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #222;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #6B8FFF;
+    }
+
+    .header .meta {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card h2 {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .big-number {
+      font-size: 48px;
+      font-weight: bold;
+      color: #6B8FFF;
+    }
+
+    .big-number.green { color: #4ade80; }
+    .big-number.yellow { color: #facc15; }
+    .big-number.red { color: #f87171; }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: #888;
+    }
+
+    .stat-value {
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .funnel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .funnel-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .funnel-bar {
+      height: 24px;
+      background: #6B8FFF;
+      border-radius: 4px;
+      min-width: 20px;
+      transition: width 0.3s;
+    }
+
+    .funnel-label {
+      font-size: 12px;
+      color: #888;
+      min-width: 140px;
+    }
+
+    .funnel-value {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .user-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .user-item:last-child {
+      border-bottom: none;
+    }
+
+    .user-name {
+      color: #6B8FFF;
+    }
+
+    .user-status {
+      font-size: 12px;
+      color: #4ade80;
+    }
+
+    .user-status.away {
+      color: #666;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .action-item {
+      background: #0A0A0A;
+      padding: 12px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .action-count {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .action-name {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .dau-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 100px;
+      padding-top: 16px;
+    }
+
+    .dau-bar {
+      flex: 1;
+      background: #6B8FFF;
+      border-radius: 2px 2px 0 0;
+      min-height: 4px;
+      position: relative;
+    }
+
+    .dau-bar:hover::after {
+      content: attr(data-date) ': ' attr(data-count);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .refresh-info {
+      text-align: center;
+      color: #444;
+      font-size: 11px;
+      margin-top: 24px;
+    }
+
+    .error {
+      background: #2a1515;
+      border: 1px solid #5c2828;
+      color: #ff6b6b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>/vibe Stats</h1>
+    <div class="meta">
+      <span class="live-dot"></span>
+      <span id="last-updated">Loading...</span>
+    </div>
+  </div>
+
+  <div id="error-container"></div>
+
+  <div class="grid">
+    <!-- Genesis / Presence -->
+    <div class="card">
+      <h2>Genesis Status</h2>
+      <div class="big-number" id="genesis-remaining">--</div>
+      <div style="color: #666; margin-top: 8px;">spots remaining</div>
+      <div style="margin-top: 16px;">
+        <div class="stat-row">
+          <span class="stat-label">Total Founders</span>
+          <span class="stat-value" id="total-founders">--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Online Now</span>
+          <span class="stat-value" id="online-now">--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Away</span>
+          <span class="stat-value" id="away-count">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Users -->
+    <div class="card">
+      <h2>Who's Online</h2>
+      <div class="user-list" id="user-list">
+        <div style="color: #666;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- DAU Chart -->
+    <div class="card">
+      <h2>Daily Active Users (7 days)</h2>
+      <div class="dau-chart" id="dau-chart">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <h2>Actions Today</h2>
+      <div class="actions-grid" id="actions-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div class="card">
+      <h2>Totals</h2>
+      <div class="stat-row">
+        <span class="stat-label">Unique Users</span>
+        <span class="stat-value" id="unique-users">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Total Actions</span>
+        <span class="stat-value" id="total-actions">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">App Version</span>
+        <span class="stat-value" id="app-version">--</span>
+      </div>
+    </div>
+
+    <!-- Invite Codes -->
+    <div class="card">
+      <h2>Alpha Codes</h2>
+      <div class="big-number green" id="codes-available">25</div>
+      <div style="color: #666; margin-top: 8px;">codes generated</div>
+      <div style="margin-top: 16px;">
+        <div class="stat-row">
+          <span class="stat-label">Wave 1 Sent</span>
+          <span class="stat-value" id="codes-sent">1</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Downloaded</span>
+          <span class="stat-value" id="codes-used">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="refresh-info">
+    Auto-refreshes every 30 seconds · <a href="/api/telemetry/stats" style="color: #6B8FFF;">Raw JSON</a>
+  </div>
+
+  <script>
+    const API = 'https://www.slashvibe.dev/api';
+
+    async function fetchAllStats() {
+      try {
+        // Fetch all data in parallel
+        const [telemetryRes, presenceRes, leaderboardRes] = await Promise.all([
+          fetch(`${API}/telemetry/stats`),
+          fetch(`${API}/presence`),
+          fetch(`${API}/growth/leaderboard`)
+        ]);
+
+        const telemetry = await telemetryRes.json();
+        const presence = await presenceRes.json();
+        const leaderboard = await leaderboardRes.json();
+
+        updateUI(telemetry, presence, leaderboard);
+        document.getElementById('error-container').innerHTML = '';
+
+      } catch (err) {
+        console.error('Fetch error:', err);
+        document.getElementById('error-container').innerHTML =
+          '<div class="error">Failed to fetch stats. Retrying...</div>';
+      }
+
+      document.getElementById('last-updated').textContent =
+        'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    function updateUI(telemetry, presence, leaderboard) {
+      // Genesis status
+      if (leaderboard.stats) {
+        document.getElementById('genesis-remaining').textContent =
+          leaderboard.stats.genesisRemaining || '--';
+        document.getElementById('total-founders').textContent =
+          leaderboard.stats.total || '--';
+      }
+
+      // Presence
+      if (presence.counts) {
+        document.getElementById('online-now').textContent = presence.counts.active || 0;
+        document.getElementById('away-count').textContent = presence.counts.away || 0;
+      }
+
+      // User list
+      const userList = document.getElementById('user-list');
+      const activeUsers = presence.active || [];
+      const awayUsers = presence.away || [];
+
+      if (activeUsers.length === 0 && awayUsers.length === 0) {
+        userList.innerHTML = '<div style="color: #666;">No one online</div>';
+      } else {
+        userList.innerHTML = [
+          ...activeUsers.map(u => `
+            <div class="user-item">
+              <span class="user-name">@${u.username}</span>
+              <span class="user-status">${u.workingOn || 'online'}</span>
+            </div>
+          `),
+          ...awayUsers.slice(0, 5).map(u => `
+            <div class="user-item">
+              <span class="user-name" style="color: #666;">@${u.username}</span>
+              <span class="user-status away">away</span>
+            </div>
+          `)
+        ].join('');
+      }
+
+      // DAU Chart
+      const dauChart = document.getElementById('dau-chart');
+      const dau = telemetry.dailyActiveUsers || [];
+      const maxDau = Math.max(...dau.map(d => d.count), 1);
+
+      dauChart.innerHTML = dau.reverse().map(d => {
+        const height = Math.max((d.count / maxDau) * 80, 4);
+        return `<div class="dau-bar" style="height: ${height}px;"
+                     data-date="${d.date}" data-count="${d.count}"></div>`;
+      }).join('');
+
+      // Actions
+      const actionsGrid = document.getElementById('actions-grid');
+      const actions = telemetry.actions || {};
+      const actionLabels = {
+        accept: 'Accept',
+        reject: 'Reject',
+        yolo_enable: 'YOLO On',
+        yolo_disable: 'YOLO Off',
+        retry: 'Retry',
+        shortcut_used: 'Shortcut'
+      };
+
+      actionsGrid.innerHTML = Object.entries(actions)
+        .filter(([k]) => actionLabels[k])
+        .map(([action, count]) => `
+          <div class="action-item">
+            <div class="action-count">${count}</div>
+            <div class="action-name">${actionLabels[action] || action}</div>
+          </div>
+        `).join('') || '<div style="color: #666; grid-column: span 2;">No actions yet</div>';
+
+      // Totals
+      if (telemetry.totals) {
+        document.getElementById('unique-users').textContent = telemetry.totals.uniqueUsers || 0;
+        document.getElementById('total-actions').textContent = telemetry.totals.totalActions || 0;
+      }
+
+      // Version
+      if (telemetry.versions) {
+        const versions = Object.entries(telemetry.versions);
+        document.getElementById('app-version').textContent =
+          versions.length > 0 ? versions.map(([v, c]) => `${v} (${c})`).join(', ') : '--';
+      }
+    }
+
+    // Initial fetch
+    fetchAllStats();
+
+    // Refresh every 30 seconds
+    setInterval(fetchAllStats, 30000);
+  </script>
+</body>
+</html>
