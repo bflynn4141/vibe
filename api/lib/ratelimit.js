@@ -190,3 +190,87 @@ export function cleanupMemoryStore() {
 if (typeof setInterval !== 'undefined') {
   setInterval(cleanupMemoryStore, 5 * 60 * 1000);
 }
+
+// ============================================================
+// AIRC v0.2 Rate Limiting
+// Operation-specific limits for identity operations
+// ============================================================
+
+/**
+ * AIRC operation rate limits
+ * - rotation: 1 per hour per handle (security critical)
+ * - revocation: 1 per 24 hours per handle (extremely sensitive)
+ * - registration: 4 per hour per IP (spam prevention)
+ * - message: 100 per minute per handle (abuse prevention)
+ */
+const AIRC_LIMITS = {
+  rotation: { max: 1, windowMs: 60 * 60 * 1000 },        // 1/hour
+  revocation: { max: 1, windowMs: 24 * 60 * 60 * 1000 }, // 1/day
+  registration: { max: 4, windowMs: 60 * 60 * 1000 },    // 4/hour per IP
+  message: { max: 100, windowMs: 60 * 1000 }             // 100/minute
+};
+
+/**
+ * Check AIRC operation rate limit
+ *
+ * @param {string} operation - Operation type (rotation, revocation, registration, message)
+ * @param {string} handle - User handle
+ * @param {string} clientIP - Client IP address (for registration)
+ * @returns {Promise<{limited: boolean, remaining: number, resetAt: number, limit: number}>}
+ */
+export async function checkAIRCRateLimit(operation, handle, clientIP) {
+  const limits = AIRC_LIMITS[operation];
+  if (!limits) {
+    console.warn(`[ratelimit] Unknown operation: ${operation}`);
+    return { limited: false, remaining: 999, resetAt: Date.now(), limit: 999 };
+  }
+
+  // Build key based on operation
+  // - Registration: keyed by IP (prevent spam from single IP)
+  // - Others: keyed by handle (per-user limits)
+  const keyIdentifier = operation === 'registration' ? hashIP(clientIP) : handle;
+  const key = `airc:${operation}:${keyIdentifier}`;
+
+  const result = await checkRateLimit(key, limits);
+
+  return {
+    limited: !result.success,
+    remaining: result.remaining,
+    resetAt: result.reset,
+    limit: limits.max
+  };
+}
+
+/**
+ * Set AIRC rate limit headers
+ *
+ * @param {object} res - Response object
+ * @param {string} operation - Operation type
+ * @param {string} handle - User handle
+ * @param {object} rateLimit - Rate limit result from checkAIRCRateLimit
+ */
+export function setAIRCRateLimitHeaders(res, operation, handle, rateLimit) {
+  res.setHeader('X-RateLimit-Limit', rateLimit.limit);
+  res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
+  res.setHeader('X-RateLimit-Reset', Math.floor(rateLimit.resetAt / 1000));
+  res.setHeader('X-RateLimit-Operation', operation);
+}
+
+/**
+ * Send AIRC rate limit exceeded response
+ *
+ * @param {object} res - Response object
+ * @param {string} operation - Operation type
+ * @param {number} retryAfterSeconds - Seconds until retry allowed
+ * @returns {object} - Response
+ */
+export function aircRateLimitResponse(res, operation, retryAfterSeconds) {
+  res.setHeader('Retry-After', retryAfterSeconds);
+
+  return res.status(429).json({
+    error: 'rate_limited',
+    operation,
+    message: `Rate limit exceeded for ${operation}. Try again in ${retryAfterSeconds} seconds.`,
+    retry_after: retryAfterSeconds
+  });
+}

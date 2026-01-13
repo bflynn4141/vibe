@@ -16,7 +16,7 @@
  */
 
 import { verifyRotationProof, validateTimestamp, parseAIRCKey } from '../../lib/crypto.js';
-import { checkRateLimit, setRateLimitHeaders, rateLimitResponse, getClientIP } from '../../lib/ratelimit.js';
+import { checkAIRCRateLimit, setAIRCRateLimitHeaders, aircRateLimitResponse, getClientIP } from '../../lib/ratelimit.js';
 import { sql } from '../../lib/db.js';
 
 export default async function handler(req, res) {
@@ -160,8 +160,8 @@ export default async function handler(req, res) {
     }
 
     // 8. Check rate limit (1 rotation per hour per handle)
-    const rateCheck = await checkRateLimit('rotation', handle, clientIP);
-    setRateLimitHeaders(res, 'rotation', handle, rateCheck);
+    const rateCheck = await checkAIRCRateLimit('rotation', handle, clientIP);
+    setAIRCRateLimitHeaders(res, 'rotation', handle, rateCheck);
 
     if (rateCheck.limited) {
       // Log rate-limited attempt
@@ -181,7 +181,7 @@ export default async function handler(req, res) {
         )
       `;
 
-      return rateLimitResponse(res, 'rotation', Math.ceil((rateCheck.resetAt - Date.now()) / 1000));
+      return aircRateLimitResponse(res, 'rotation', Math.ceil((rateCheck.resetAt - Date.now()) / 1000));
     }
 
     // 9. Check nonce hasn't been used (replay prevention)
