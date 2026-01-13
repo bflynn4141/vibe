@@ -20,6 +20,7 @@ import {
   getHandleRecord,
   getHandleStats
 } from './lib/handles.js';
+import { sql } from './lib/db.js';
 
 // Check if KV is configured
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -98,7 +99,7 @@ export default async function handler(req, res) {
 
   // POST - Register or update user
   if (req.method === 'POST') {
-    const { username, building, invitedBy, inviteCode, publicKey } = req.body;
+    const { username, building, invitedBy, inviteCode, publicKey, recoveryKey } = req.body;
 
     if (!username) {
       return res.status(400).json({
@@ -164,10 +165,34 @@ export default async function handler(req, res) {
       updatedAt: now,
       invitedBy: invitedBy || existing?.invitedBy || null,
       inviteCode: inviteCode || existing?.inviteCode || null,
-      publicKey: publicKey || existing?.publicKey || null
+      publicKey: publicKey || existing?.publicKey || null,
+      recoveryKey: recoveryKey || existing?.recoveryKey || null
     };
 
     await setUser(user, userData);
+
+    // AIRC v0.2: If recoveryKey is provided, also sync to Postgres for identity operations
+    // This enables key rotation and revocation for this user
+    let postgresSync = null;
+    if (recoveryKey && publicKey) {
+      try {
+        // Upsert to Postgres users table for AIRC identity operations
+        const result = await sql`
+          INSERT INTO users (handle, signing_key, recovery_key, status, created_at, updated_at)
+          VALUES (${user}, ${publicKey}, ${recoveryKey}, 'active', NOW(), NOW())
+          ON CONFLICT (handle) DO UPDATE SET
+            signing_key = EXCLUDED.signing_key,
+            recovery_key = EXCLUDED.recovery_key,
+            updated_at = NOW()
+          RETURNING handle, signing_key, recovery_key, status, created_at
+        `;
+        postgresSync = { success: true, identity: result[0] };
+      } catch (e) {
+        console.error('[users] Postgres sync error:', e.message);
+        postgresSync = { success: false, error: e.message };
+        // Don't fail registration - KV storage succeeded
+      }
+    }
 
     // Get current handle stats
     let handleStats = null;
@@ -182,7 +207,8 @@ export default async function handler(req, res) {
       isNewHandle,
       genesisNumber,
       handleStats,
-      storage: KV_CONFIGURED ? 'kv' : 'memory'
+      storage: KV_CONFIGURED ? 'kv' : 'memory',
+      identity: postgresSync  // AIRC v0.2 identity sync status (null if no recoveryKey)
     });
   }
 

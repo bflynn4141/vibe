@@ -85,10 +85,11 @@ export default async function handler(req, res) {
     }
 
     // 3. Fetch user record
+    // Note: Schema uses 'handle' and 'signing_key' per AIRC spec
     const userResult = await sql`
-      SELECT username, public_key, recovery_key, key_rotated_at, status
+      SELECT handle, signing_key, recovery_key, key_rotated_at, status
       FROM users
-      WHERE username = ${handle}
+      WHERE handle = ${handle}
     `;
 
     if (userResult.length === 0) {
@@ -127,7 +128,7 @@ export default async function handler(req, res) {
     const recoveryKeyParsed = parseAIRCKey(user.recovery_key);
     const oldKeyParsed = parseAIRCKey(proof.old_key);
     const newKeyParsed = parseAIRCKey(proof.new_key);
-    const currentKeyParsed = parseAIRCKey(user.public_key);
+    const currentKeyParsed = parseAIRCKey(user.signing_key); // Schema uses 'signing_key'
 
     if (!recoveryKeyParsed || !oldKeyParsed || !newKeyParsed || !currentKeyParsed) {
       return res.status(500).json({ error: 'key_format_error' });
@@ -237,12 +238,12 @@ export default async function handler(req, res) {
     // 11. Update signing key atomically (with optimistic locking)
     const updateResult = await sql`
       UPDATE users
-      SET public_key = ${proof.new_key},
+      SET signing_key = ${proof.new_key},
           key_rotated_at = NOW(),
           updated_at = NOW()
-      WHERE username = ${handle}
-      AND public_key = ${proof.old_key}
-      RETURNING username, public_key, key_rotated_at
+      WHERE handle = ${handle}
+      AND signing_key = ${proof.old_key}
+      RETURNING handle, signing_key, key_rotated_at
     `;
 
     if (updateResult.length === 0) {
@@ -282,7 +283,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       handle: handle,
-      new_key: updated.public_key,
+      new_key: updated.signing_key,
       rotated_at: updated.key_rotated_at,
       message: 'Signing key rotated successfully'
     });
