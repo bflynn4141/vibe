@@ -1,16 +1,21 @@
 /**
- * Growth Leaderboard
+ * Growth Leaderboard v2.0
  *
- * GET /api/growth/leaderboard - See who's driving adoption
+ * GET /api/growth/leaderboard - See who's building the most
  *
- * Tracks:
- * - Invites sent & redeemed
- * - Ships posted
- * - Messages sent (engagement)
- * - Streaks (retention)
+ * Now uses Vibe Score 2.0:
+ * - Ships posted (building stuff)
+ * - Reactions received (quality signal)
+ * - Comments given (helping others)
+ * - Streak consistency (showing up)
+ * - Invites redeemed (growing community)
+ *
+ * The score rewards actual building behavior, not just vanity metrics.
  */
 
 import { kv } from '@vercel/kv';
+import { getVibeScore, getTierDisplay } from '../lib/vibescore.js';
+import { setSecurityHeaders } from '../lib/security.js';
 
 // System accounts to filter from leaderboard
 const SYSTEM_ACCOUNTS = new Set([
@@ -20,6 +25,7 @@ const SYSTEM_ACCOUNTS = new Set([
 ]);
 
 export default async function handler(req, res) {
+  setSecurityHeaders(res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=60');
 
@@ -36,62 +42,87 @@ export default async function handler(req, res) {
     }
 
     const leaderboard = [];
+    const handleList = Object.entries(handles).filter(([h]) => !SYSTEM_ACCOUNTS.has(h));
 
-    for (const [handle, record] of Object.entries(handles)) {
-      // Skip system accounts
-      if (SYSTEM_ACCOUNTS.has(handle)) continue;
+    // Process handles in batches for performance
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < handleList.length; i += BATCH_SIZE) {
+      const batch = handleList.slice(i, i + BATCH_SIZE);
 
-      let data;
-      try {
-        data = typeof record === 'string' ? JSON.parse(record) : record;
-      } catch (parseErr) {
-        console.error(`[leaderboard] Failed to parse record for ${handle}:`, record);
-        continue; // Skip malformed records
-      }
+      const batchResults = await Promise.all(
+        batch.map(async ([handle, record]) => {
+          try {
+            const data = typeof record === 'string' ? JSON.parse(record) : record;
 
-      // Count successful invites
-      const inviteCodes = await kv.smembers(`vibe:invites:by:${handle}`) || [];
-      let successfulInvites = 0;
+            // Get Vibe Score
+            const scoreData = await getVibeScore(kv, handle);
 
-      for (const code of inviteCodes) {
-        try {
-          const codeData = await kv.hget('vibe:invites', code);
-          if (codeData) {
-            const parsed = typeof codeData === 'string' ? JSON.parse(codeData) : codeData;
-            if (parsed.status === 'used') {
-              successfulInvites++;
-            }
+            // Get presence for online status
+            const presence = await kv.get(`presence:${handle}`);
+            const lastSeen = presence?.lastSeen;
+            const isActive = lastSeen &&
+              (Date.now() - new Date(lastSeen).getTime()) < 24 * 60 * 60 * 1000;
+
+            // Get streak
+            const streak = await kv.get(`streak:${handle}`) || { current: 0, longest: 0 };
+
+            return {
+              handle,
+              genesis: data.genesis || false,
+              genesisNumber: data.genesis_number || null,
+
+              // New Vibe Score
+              vibeScore: scoreData?.score || 0,
+              tier: scoreData?.tier || 'newcomer',
+              tierDisplay: scoreData ? getTierDisplay(scoreData.tier) : null,
+
+              // Key metrics (from score breakdown)
+              stats: scoreData?.stats ? {
+                ships: scoreData.stats.shipsPosted,
+                reactionsReceived: scoreData.stats.reactionsReceived,
+                commentsGiven: scoreData.stats.commentsGiven,
+                invitesRedeemed: scoreData.stats.invitesRedeemed,
+              } : null,
+
+              // Streak
+              streak: streak.current,
+              longestStreak: streak.longest,
+
+              // Status
+              isActive,
+              lastActive: lastSeen || data.last_active_at,
+              registeredAt: data.registeredAt,
+
+              // Legacy growth score (for backwards compatibility)
+              growthScore: scoreData?.score || 0,
+            };
+          } catch (err) {
+            console.error(`[leaderboard] Error processing ${handle}:`, err.message);
+            return null;
           }
-        } catch (inviteErr) {
-          // Skip malformed invite data
-          continue;
-        }
-      }
+        })
+      );
 
-      // Get activity metrics
-      const presence = await kv.get(`presence:${handle}`);
-      const isActive = presence &&
-        (Date.now() - new Date(presence.lastSeen).getTime()) < 24 * 60 * 60 * 1000;
-
-      leaderboard.push({
-        handle,
-        genesis: data.genesis || false,
-        genesisNumber: data.genesis_number || null,
-        successfulInvites,
-        messagesSent: data.messages_sent || 0,
-        isActive,
-        registeredAt: data.registeredAt,
-        lastActive: presence?.lastSeen || data.last_active_at,
-        // Growth score: invites weighted heavily
-        growthScore: (successfulInvites * 100) + (data.messages_sent || 0) + (isActive ? 50 : 0)
-      });
+      leaderboard.push(...batchResults.filter(r => r !== null));
     }
 
-    // Sort by growth score
-    leaderboard.sort((a, b) => b.growthScore - a.growthScore);
+    // Sort by Vibe Score (descending)
+    leaderboard.sort((a, b) => b.vibeScore - a.vibeScore);
+
+    // Assign ranks
+    leaderboard.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
 
     // Get stats
-    const totalHandles = Object.keys(handles).length;
+    const totalHandles = Object.keys(handles).filter(h => !SYSTEM_ACCOUNTS.has(h)).length;
+    const activeCount = leaderboard.filter(u => u.isActive).length;
+
+    // Tier distribution
+    const tierCounts = {};
+    for (const entry of leaderboard) {
+      tierCounts[entry.tier] = (tierCounts[entry.tier] || 0) + 1;
+    }
 
     return res.status(200).json({
       success: true,
@@ -99,13 +130,18 @@ export default async function handler(req, res) {
       stats: {
         total: totalHandles,
         genesisRemaining: Math.max(0, 100 - totalHandles),
-        activeToday: leaderboard.filter(u => u.isActive).length,
-        totalInvitesSent: leaderboard.reduce((sum, u) => sum + u.successfulInvites, 0)
-      }
+        activeToday: activeCount,
+        tierDistribution: tierCounts,
+        averageVibeScore: Math.round(
+          leaderboard.reduce((sum, u) => sum + u.vibeScore, 0) / Math.max(1, leaderboard.length)
+        ),
+      },
+      scoreVersion: '2.0',
+      note: 'Vibe Score now reflects actual building behavior: ships, reactions, comments, streaks, and community growth.',
     });
 
   } catch (e) {
-    console.error('Leaderboard error:', e);
+    console.error('[leaderboard] Error:', e);
     return res.status(500).json({ success: false, error: e.message });
   }
 }

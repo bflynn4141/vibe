@@ -54,6 +54,7 @@
     { "source": "/api/board/react", "destination": "/api/board/react.js" },
     { "source": "/api/board/comment", "destination": "/api/board/comment.js" },
     { "source": "/api/observations", "destination": "/api/observations.js" },
+    { "source": "/api/notifications", "destination": "/api/notifications.js" },
     { "source": "/api/register", "destination": "/api/register.js" },
     { "source": "/api/health", "destination": "/api/health.js" },
     { "source": "/llms.txt", "destination": "/public/llms.txt" },
