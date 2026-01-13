@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sessions | /vibe</title>
+  <meta name="description" content="Discover and watch how developers code with Claude">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { margin-bottom: 32px; }
+    .header h1 { font-size: 24px; margin-bottom: 8px; color: #fff; }
+    .header p { color: #666; font-size: 14px; }
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-group label {
+      color: #666;
+      font-size: 12px;
+    }
+    select, input {
+      background: #111;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: #6b8fff;
+    }
+    .sessions-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .session-card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 20px;
+      transition: border-color 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .session-card:hover { border-color: #6b8fff; }
+    .session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .session-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .session-author { font-size: 12px; color: #666; }
+    .session-author span { color: #6b8fff; }
+    .session-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: #666;
+    }
+    .session-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .tag {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      color: #888;
+    }
+    .tag.type { border-color: #6b8fff; color: #6b8fff; }
+    .tag.success { border-color: #4ade80; color: #4ade80; }
+    .tag.failed { border-color: #f87171; color: #f87171; }
+    .summary {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+    .empty h3 { margin-bottom: 8px; color: #888; }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 32px;
+    }
+    .page-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #888;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .page-btn:hover:not(:disabled) { border-color: #6b8fff; color: #6b8fff; }
+    .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Shared Sessions</h1>
+      <p>Watch how developers code with Claude. Learn from real sessions.</p>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Sort:</label>
+        <select id="sortSelect">
+          <option value="recent">Recent</option>
+          <option value="popular">Popular</option>
+          <option value="views">Most Viewed</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Skill:</label>
+        <input type="text" id="skillInput" placeholder="e.g. rust, typescript">
+      </div>
+      <div class="filter-group">
+        <label>Author:</label>
+        <input type="text" id="authorInput" placeholder="e.g. seth">
+      </div>
+    </div>
+
+    <div class="stats-bar">
+      <span id="resultsCount">Loading...</span>
+    </div>
+
+    <div class="sessions-grid" id="sessionsGrid">
+      <div class="loading">Loading sessions...</div>
+    </div>
+
+    <div class="pagination" id="pagination" style="display: none;">
+      <button class="page-btn" id="prevBtn">&larr; Previous</button>
+      <span id="pageInfo"></span>
+      <button class="page-btn" id="nextBtn">Next &rarr;</button>
+    </div>
+  </div>
+
+  <script>
+    const LIMIT = 20;
+    let offset = 0;
+    let total = 0;
+
+    const sessionsGrid = document.getElementById('sessionsGrid');
+    const resultsCount = document.getElementById('resultsCount');
+    const pagination = document.getElementById('pagination');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageInfo = document.getElementById('pageInfo');
+    const sortSelect = document.getElementById('sortSelect');
+    const skillInput = document.getElementById('skillInput');
+    const authorInput = document.getElementById('authorInput');
+
+    function formatDuration(seconds) {
+      if (!seconds) return '';
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      if (hours > 0) return hours + 'h ' + mins + 'm';
+      return mins + 'm';
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function loadSessions() {
+      sessionsGrid.innerHTML = '<div class="loading">Loading sessions...</div>';
+
+      const params = new URLSearchParams({
+        limit: LIMIT,
+        offset: offset,
+        sort: sortSelect.value
+      });
+
+      if (skillInput.value.trim()) {
+        params.set('skill', skillInput.value.trim());
+      }
+      if (authorInput.value.trim()) {
+        params.set('author', authorInput.value.trim());
+      }
+
+      try {
+        const res = await fetch('/api/sessions/browse?' + params);
+        const data = await res.json();
+
+        if (!data.success) {
+          sessionsGrid.innerHTML = '<div class="empty"><h3>Error loading sessions</h3></div>';
+          return;
+        }
+
+        total = data.total;
+        resultsCount.textContent = total + ' session' + (total !== 1 ? 's' : '') + ' found';
+
+        if (data.sessions.length === 0) {
+          sessionsGrid.innerHTML = '<div class="empty"><h3>No sessions found</h3><p>Be the first to share a session!</p></div>';
+          pagination.style.display = 'none';
+          return;
+        }
+
+        sessionsGrid.innerHTML = data.sessions.map(s => {
+          const enrichment = s.enrichment || {};
+          const techStack = enrichment.techStack || [];
+          const problemType = enrichment.problemType || 'unknown';
+          const outcome = enrichment.outcome || 'unknown';
+
+          return '<a href="/session/' + s.id + '" class="session-card">' +
+            '<div class="session-header">' +
+              '<div>' +
+                '<div class="session-title">' + escapeHtml(s.title) + '</div>' +
+                '<div class="session-author">by <span>@' + escapeHtml(s.author) + '</span></div>' +
+              '</div>' +
+              '<div class="session-meta">' +
+                '<span>' + s.views + ' views</span>' +
+                (s.forks > 0 ? '<span>' + s.forks + ' forks</span>' : '') +
+              '</div>' +
+            '</div>' +
+            '<div class="session-tags">' +
+              '<span class="tag type">' + escapeHtml(problemType) + '</span>' +
+              '<span class="tag ' + (outcome === 'success' ? 'success' : outcome === 'failed' ? 'failed' : '') + '">' + escapeHtml(outcome) + '</span>' +
+              techStack.slice(0, 4).map(t => '<span class="tag">' + escapeHtml(t) + '</span>').join('') +
+              (s.duration ? '<span class="tag">' + formatDuration(s.duration) + '</span>' : '') +
+            '</div>' +
+            (s.summary ? '<div class="summary">' + escapeHtml(s.summary) + '</div>' : '') +
+          '</a>';
+        }).join('');
+
+        // Pagination
+        const totalPages = Math.ceil(total / LIMIT);
+        const currentPage = Math.floor(offset / LIMIT) + 1;
+
+        if (totalPages > 1) {
+          pagination.style.display = 'flex';
+          pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+          prevBtn.disabled = offset === 0;
+          nextBtn.disabled = !data.hasMore;
+        } else {
+          pagination.style.display = 'none';
+        }
+
+      } catch (err) {
+        console.error('Error:', err);
+        sessionsGrid.innerHTML = '<div class="empty"><h3>Error loading sessions</h3></div>';
+      }
+    }
+
+    // Event listeners
+    sortSelect.addEventListener('change', () => {
+      offset = 0;
+      loadSessions();
+    });
+
+    let debounceTimeout;
+    function debounceLoad() {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        offset = 0;
+        loadSessions();
+      }, 300);
+    }
+
+    skillInput.addEventListener('input', debounceLoad);
+    authorInput.addEventListener('input', debounceLoad);
+
+    prevBtn.addEventListener('click', () => {
+      offset = Math.max(0, offset - LIMIT);
+      loadSessions();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      offset += LIMIT;
+      loadSessions();
+    });
+
+    // Init
+    loadSessions();
+  </script>
+</body>
+</html>
