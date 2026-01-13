@@ -95,9 +95,20 @@ export default async function handler(req, res) {
     // Get user's handle record
     const handleRecord = await kv.hget('vibe:handles', handle);
     if (!handleRecord) {
+      // Debug: Check if handle exists in full hash
+      const allHandles = await kv.hgetall('vibe:handles');
+      const handleKeys = allHandles ? Object.keys(allHandles) : [];
+      const matchingKey = handleKeys.find(k => k.toLowerCase() === handle);
+
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found',
+        debug: {
+          requested_handle: handle,
+          total_handles: handleKeys.length,
+          matching_key: matchingKey || null,
+          sample_keys: handleKeys.slice(0, 5)
+        }
       });
     }
 
