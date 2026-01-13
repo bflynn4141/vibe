@@ -173,18 +173,19 @@ export default async function handler(req, res) {
 
     // AIRC v0.2: If recoveryKey is provided, also sync to Postgres for identity operations
     // This enables key rotation and revocation for this user
+    // Note: Schema uses 'username'/'public_key' (AIRC spec calls them 'handle'/'signing_key')
     let postgresSync = null;
     if (recoveryKey && publicKey) {
       try {
         // Upsert to Postgres users table for AIRC identity operations
         const result = await sql`
-          INSERT INTO users (handle, signing_key, recovery_key, status, created_at, updated_at)
+          INSERT INTO users (username, public_key, recovery_key, status, created_at, updated_at)
           VALUES (${user}, ${publicKey}, ${recoveryKey}, 'active', NOW(), NOW())
-          ON CONFLICT (handle) DO UPDATE SET
-            signing_key = EXCLUDED.signing_key,
+          ON CONFLICT (username) DO UPDATE SET
+            public_key = EXCLUDED.public_key,
             recovery_key = EXCLUDED.recovery_key,
             updated_at = NOW()
-          RETURNING handle, signing_key, recovery_key, status, created_at
+          RETURNING username, public_key, recovery_key, status, created_at
         `;
         postgresSync = { success: true, identity: result[0] };
       } catch (e) {
