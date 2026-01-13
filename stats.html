@@ -383,11 +383,11 @@
         </div>
         <div class="stat-row">
           <span class="stat-label">Wave 1 Sent</span>
-          <span class="stat-value" id="codes-sent">1</span>
+          <span class="stat-value" id="wave1-sent">--</span>
         </div>
         <div class="stat-row">
           <span class="stat-label">Downloads</span>
-          <span class="stat-value" id="codes-downloaded">--</span>
+          <span class="stat-value" id="alpha-downloads">--</span>
         </div>
         <div class="stat-row">
           <span class="stat-label">Waitlist</span>
@@ -541,6 +541,13 @@
 
     function updateUI(telemetry, presence, leaderboard) {
       // === PLATFORM SECTION ===
+
+      // Alpha invite stats
+      if (telemetry.alpha) {
+        document.getElementById('wave1-sent').textContent = telemetry.alpha.wave1Sent || 0;
+        document.getElementById('alpha-downloads').textContent = telemetry.alpha.downloads || 0;
+        document.getElementById('waitlist-count').textContent = telemetry.alpha.waitlistCount || 0;
+      }
 
       // Genesis status
       if (leaderboard.stats) {

@@ -25,6 +25,11 @@ export default async function handler(req) {
       actions: {},
       versions: {},
       terminalUsers: [], // Active terminal users (last 24h)
+      alpha: {
+        wave1Sent: 0,
+        downloads: 0,
+        waitlistCount: 0,
+      },
       totals: {
         uniqueUsers: 0,
         totalActions: 0,
@@ -73,6 +78,19 @@ export default async function handler(req) {
     }
 
     stats.totals.uniqueUsers = allUsers.size;
+
+    // Get alpha invite stats
+    try {
+      const wave1Sent = await kv.get('vibe:alpha:wave1_sent');
+      const downloads = await kv.get('vibe:alpha:stats:downloads');
+      const waitlistCount = await kv.scard('vibe:alpha:waitlist');
+
+      stats.alpha.wave1Sent = wave1Sent || 0;
+      stats.alpha.downloads = downloads || 0;
+      stats.alpha.waitlistCount = waitlistCount || 0;
+    } catch (e) {
+      console.log("Alpha stats fetch error:", e);
+    }
 
     // Get active terminal users (last 24h) with scores
     try {
