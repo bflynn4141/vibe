@@ -135,7 +135,7 @@ export default async function handler(req, res) {
     }
 
     // 7. Verify rotation proof signature (signed by recovery key)
-    const proofValid = verifyRotationProof(proof, recoveryKeyParsed.keyData);
+    const proofValid = verifyRotationProof(proof, recoveryKeyParsed.raw);
     if (!proofValid) {
       // Log failed attempt
       await sql`
