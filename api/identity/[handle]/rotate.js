@@ -285,7 +285,9 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[Rotation] Error:', error);
+    console.error('[Rotation] Error:', error.message);
+    console.error('[Rotation] Stack:', error.stack);
+    console.error('[Rotation] Error code:', error.code);
 
     // Log error to audit log
     try {
@@ -308,7 +310,11 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       error: 'internal_error',
-      message: 'An error occurred during key rotation'
+      message: 'An error occurred during key rotation',
+      debug: {
+        errorMessage: error.message,
+        errorCode: error.code
+      }
     });
   }
 }
