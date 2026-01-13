@@ -105,6 +105,34 @@ export default async function handler(req, res) {
     entry.reactions = reactions;
     await kv.set(`board:entry:${entryId}`, entry);
 
+    // Notify post author of reaction (unless they're reacting to themselves)
+    if (action === 'added' && entry.author !== normalizedHandle) {
+      try {
+        const MESSAGES_KEY = 'vibe:messages';
+        const messages = await kv.get(MESSAGES_KEY) || [];
+
+        messages.push({
+          id: `notif_${Date.now().toString(36)}`,
+          from: 'vibe',
+          to: entry.author,
+          text: `${REACTIONS[reaction]} @${normalizedHandle} reacted to your ship: "${(entry.content || '').substring(0, 50)}${(entry.content || '').length > 50 ? '...' : ''}"`,
+          createdAt: new Date().toISOString(),
+          read: false,
+          type: 'reaction_notification'
+        });
+
+        // Keep last 10k messages
+        if (messages.length > 10000) {
+          messages.splice(0, messages.length - 10000);
+        }
+
+        await kv.set(MESSAGES_KEY, messages);
+      } catch (notifErr) {
+        console.error('[board/react] Notification error:', notifErr.message);
+        // Non-critical, continue
+      }
+    }
+
     // Calculate total reactions for this entry
     const totalReactions = Object.values(reactions).reduce(
       (sum, users) => sum + users.length,

@@ -18,6 +18,7 @@ const EVENTS_PER_USER_MAX = 500;              // Keep last 500 per user
 // Valid event types
 const EVENT_TYPES = [
   'board_post_created',
+  'board_comment_created',
   'message_sent',
   'invite_created',
   'invite_redeemed',

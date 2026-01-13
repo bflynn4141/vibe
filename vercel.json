@@ -52,6 +52,7 @@
     { "source": "/api/stats", "destination": "/api/stats.js" },
     { "source": "/api/board", "destination": "/api/board.js" },
     { "source": "/api/board/react", "destination": "/api/board/react.js" },
+    { "source": "/api/board/comment", "destination": "/api/board/comment.js" },
     { "source": "/api/observations", "destination": "/api/observations.js" },
     { "source": "/api/register", "destination": "/api/register.js" },
     { "source": "/api/health", "destination": "/api/health.js" },
