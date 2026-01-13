@@ -32,7 +32,17 @@
       "Bash(git status:*)",
       "Bash(__NEW_LINE_44b4a0f87e6e7249__ echo -e \"\\\\n=== Test 2: Presence with LIVE fields ===\")",
       "Bash(__NEW_LINE_17a69f1af0514e32__ echo -e \"\\\\n=== Test 3: Watch page returns 200 ===\")",
-      "Bash(__NEW_LINE_17a69f1af0514e32__ echo -e \"\\\\n=== Test 4: Reactions API requires params ===\")"
+      "Bash(__NEW_LINE_17a69f1af0514e32__ echo -e \"\\\\n=== Test 4: Reactions API requires params ===\")",
+      "Bash(npx tsc:*)",
+      "Bash(cargo check:*)",
+      "Bash(source .env.local)",
+      "Bash(node scripts/run-migration.js:*)",
+      "Bash(export POSTGRES_URL=\"$POSTGRES_DATABASE_URL\")",
+      "Bash(psql:*)",
+      "Bash(brew list:*)",
+      "Bash(node scripts/run-full-migration.js:*)",
+      "Bash(vercel ls:*)",
+      "Bash(vercel --prod:*)"
     ]
   }
 }
