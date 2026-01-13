@@ -92,6 +92,7 @@
     { "source": "/api/sessions/share", "destination": "/api/sessions/share.js" },
     { "source": "/api/sessions/replay", "destination": "/api/sessions/replay.js" },
     { "source": "/api/sessions/browse", "destination": "/api/sessions/browse.js" },
+    { "source": "/api/sessions/handoff", "destination": "/api/sessions/handoff.js" },
     { "source": "/session/:id", "destination": "/api/session/:id" },
     { "source": "/replay/:id", "destination": "/api/replay/:id" },
     { "source": "/sessions", "destination": "/sessions.html" },
