@@ -84,7 +84,7 @@
     { "source": "/api/alpha/waitlist", "destination": "/api/alpha/waitlist.js" },
     { "source": "/api/watch", "destination": "/api/watch.js" },
     { "source": "/api/watch/react", "destination": "/api/watch/react.js" },
-    { "source": "/watch/:roomId", "destination": "/watch/room.html" },
+    { "source": "/watch/:roomId", "destination": "/watch/room" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/docs", "destination": "/api/docs" },
     { "source": "/chronicle", "destination": "/chronicle.html" },
