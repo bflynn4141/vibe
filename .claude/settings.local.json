@@ -42,7 +42,12 @@
       "Bash(brew list:*)",
       "Bash(node scripts/run-full-migration.js:*)",
       "Bash(vercel ls:*)",
-      "Bash(vercel --prod:*)"
+      "Bash(vercel --prod:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git stash:*)",
+      "Bash(pnpm tauri build:*)",
+      "Bash(POSTGRES_URL=$POSTGRES_DATABASE_URL node:*)"
     ]
   }
 }

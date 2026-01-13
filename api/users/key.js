@@ -3,19 +3,26 @@
  *
  * POST /api/users/key - Register or update a user's public key
  *
- * Body:
+ * Body (first registration):
  * {
- *   handle: "@seth",
+ *   handle: "seth",
  *   publicKey: "ed25519:base64...",
  *   proof: "timestamp|signature"
+ * }
+ *
+ * Body (key rotation - requires old key proof):
+ * {
+ *   handle: "seth",
+ *   publicKey: "ed25519:base64...",
+ *   proof: "timestamp|signature",
+ *   oldKeyProof: "timestamp|signature"  // REQUIRED if user already has a key
  * }
  *
  * The proof format uses pipe (|) as separator since colons appear in RFC3339 timestamps.
  * The signed message is "{normalized_handle}:{timestamp}" (handle is lowercased, @ stripped).
  * The proof is: "{timestamp}|{base64_signature}"
  *
- * This endpoint is the server side of "invisible signing" - clients call it
- * once on first use to register their auto-generated public key.
+ * SECURITY: Key rotation requires proof signed by BOTH old and new keys to prevent takeover.
  */
 
 import { setSecurityHeaders } from '../lib/security.js';
@@ -50,7 +57,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { handle, publicKey, proof } = req.body;
+  const { handle, publicKey, proof, oldKeyProof } = req.body;
 
   // Validate required fields
   if (!handle || !publicKey || !proof) {
@@ -142,6 +149,59 @@ export default async function handler(req, res) {
 
   // Check if key is being changed
   const isKeyChange = existing.publicKey && existing.publicKey !== publicKey;
+
+  // SECURITY: Key rotation requires proof signed by the OLD key
+  if (isKeyChange) {
+    if (!oldKeyProof) {
+      return res.status(400).json({
+        success: false,
+        error: 'Key rotation requires oldKeyProof signed by your current key'
+      });
+    }
+
+    // Parse old key proof
+    const oldPipeIndex = oldKeyProof.indexOf('|');
+    if (oldPipeIndex === -1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid oldKeyProof format. Expected: timestamp|signature'
+      });
+    }
+
+    const oldTimestamp = oldKeyProof.substring(0, oldPipeIndex);
+    const oldSignature = oldKeyProof.substring(oldPipeIndex + 1);
+
+    // Validate old proof timestamp
+    const oldTimestampCheck = validateTimestamp(oldTimestamp, 300);
+    if (!oldTimestampCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        error: `oldKeyProof: ${oldTimestampCheck.message}`
+      });
+    }
+
+    // Parse existing public key
+    const existingKeyParsed = parseAIRCKey(existing.publicKey);
+    if (!existingKeyParsed) {
+      return res.status(500).json({
+        success: false,
+        error: 'Stored public key is invalid. Contact support.'
+      });
+    }
+
+    // Verify old key proof: signature of "{handle}:{timestamp}" by OLD key
+    const oldMessageToVerify = `${normalizedHandle}:${oldTimestamp}`;
+    const oldKeyValid = verify(oldMessageToVerify, oldSignature, existingKeyParsed.raw);
+
+    if (!oldKeyValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid oldKeyProof. You must prove ownership of your current key to rotate.'
+      });
+    }
+
+    console.log(`[users/key] Key rotation authorized for @${normalizedHandle} (old key verified)`);
+  }
 
   // Update user with new public key
   const now = new Date().toISOString();

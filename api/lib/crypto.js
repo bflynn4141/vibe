@@ -389,7 +389,8 @@ const SESSION_TTL = 60 * 60 * 1000; // 1 hour
  */
 export function generateSessionToken(handle, signingKey) {
   const expiresAt = Date.now() + SESSION_TTL;
-  const payload = `${handle}:${signingKey}:${expiresAt}`;
+  // Use pipe separator to avoid conflict with ed25519: prefix in signingKey
+  const payload = `${handle}|${signingKey}|${expiresAt}`;
 
   const hmac = crypto.createHmac('sha256', EFFECTIVE_SESSION_SECRET);
   hmac.update(payload);
@@ -436,8 +437,8 @@ export function verifySessionToken(token, expectedHandle, expectedKey) {
     return { valid: false, error: 'invalid_signature' };
   }
 
-  // Parse payload
-  const [handle, signingKey, expiresAtStr] = payload.split(':');
+  // Parse payload (pipe separator to avoid conflict with ed25519: prefix)
+  const [handle, signingKey, expiresAtStr] = payload.split('|');
   const expiresAt = parseInt(expiresAtStr, 10);
 
   // Check expiration
