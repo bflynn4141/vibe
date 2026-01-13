@@ -26,7 +26,7 @@ import crypto from 'crypto';
 // ============================================================
 
 const STAGING_URL = process.env.STAGING_URL || 'https://vibe-public-pjft4mtcb-sethvibes.vercel.app';
-const PRODUCTION_URL = process.env.PRODUCTION_URL || 'https://slashvibe.dev';
+const PRODUCTION_URL = process.env.PRODUCTION_URL || 'https://www.slashvibe.dev'; // Must use www for POST requests
 const USE_STAGING = process.argv.includes('--staging') || process.argv.includes('-s');
 const BASE_URL = USE_STAGING ? STAGING_URL : PRODUCTION_URL;
 
@@ -371,10 +371,12 @@ async function runRateLimitTests() {
   await runTest('RATE-3', 'Registration rate limit response format', async () => {
     // Test that we can make requests (limit is 4/hour)
     // Just verify the endpoint exists and returns valid JSON
+    // Use short handle (max 20 chars): rt_ + 6 chars = 9 chars
+    const shortId = Date.now().toString(36).slice(-6);
     const { status, json } = await fetchJSON(`${BASE_URL}/api/users`, {
       method: 'POST',
       body: JSON.stringify({
-        username: `ratetest_${Date.now()}`,
+        username: `rt_${shortId}`,
         building: 'rate limit test'
       })
     });
