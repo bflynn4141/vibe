@@ -3,6 +3,8 @@
  *
  * GET /api/invites/status?username=X - Get invite status for a user
  *
+ * Contract: vibe-terminal/src/lib/vibeApi.ts#invitesApi
+ *
  * Returns data in the shape the terminal expects:
  * {
  *   username: string,
