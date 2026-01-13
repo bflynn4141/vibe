@@ -82,8 +82,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Extract handle from path
-  const handle = req.query.handle?.toLowerCase().trim();
+  // Extract handle from URL path (works with Vercel rewrites)
+  // URL is like /api/skills/seth - extract the last segment
+  const urlPath = req.url?.split('?')[0] || '';
+  const pathSegments = urlPath.split('/').filter(Boolean);
+  const handle = pathSegments[pathSegments.length - 1]?.toLowerCase().trim();
   if (!handle) {
     return res.status(400).json({
       success: false,
@@ -105,6 +108,8 @@ export default async function handler(req, res) {
         error: 'User not found',
         debug: {
           requested_handle: handle,
+          url: req.url,
+          query: req.query,
           total_handles: handleKeys.length,
           matching_key: matchingKey || null,
           sample_keys: handleKeys.slice(0, 5)
