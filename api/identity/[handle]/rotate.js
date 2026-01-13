@@ -139,7 +139,7 @@ export default async function handler(req, res) {
     if (!proofValid) {
       // Log failed attempt
       await sql`
-        INSERT INTO audit_log (event_type, handle, success, details, ip_address)
+        INSERT INTO audit_log (event_type, handle, success, details)
         VALUES (
           'key_rotation',
           ${handle},
@@ -148,8 +148,7 @@ export default async function handler(req, res) {
             error: 'invalid_signature',
             nonce: proof.nonce,
             timestamp: proof.timestamp
-          })},
-          ${clientIP}
+          })}
         )
       `;
 
@@ -166,7 +165,7 @@ export default async function handler(req, res) {
     if (rateCheck.limited) {
       // Log rate-limited attempt
       await sql`
-        INSERT INTO audit_log (event_type, handle, success, details, ip_address)
+        INSERT INTO audit_log (event_type, handle, success, details)
         VALUES (
           'rate_limited',
           ${handle},
@@ -175,8 +174,7 @@ export default async function handler(req, res) {
             operation: 'rotation',
             remaining: rateCheck.remaining,
             reset_at: rateCheck.resetAt
-          })},
-          ${clientIP}
+          })}
         )
       `;
 
@@ -186,13 +184,12 @@ export default async function handler(req, res) {
     // 9. Check nonce hasn't been used (replay prevention)
     try {
       await sql`
-        INSERT INTO nonce_tracker (nonce, handle, operation, expires_at, ip_address)
+        INSERT INTO nonce_tracker (nonce, handle, operation, expires_at)
         VALUES (
           ${proof.nonce},
           ${handle},
           'rotation',
-          NOW() + INTERVAL '1 hour',
-          ${clientIP}
+          NOW() + INTERVAL '1 hour'
         )
       `;
     } catch (e) {
@@ -200,7 +197,7 @@ export default async function handler(req, res) {
       if (e.code === '23505') { // Unique violation
         // Log replay attempt
         await sql`
-          INSERT INTO audit_log (event_type, handle, success, details, ip_address)
+          INSERT INTO audit_log (event_type, handle, success, details)
           VALUES (
             'key_rotation',
             ${handle},
@@ -209,8 +206,7 @@ export default async function handler(req, res) {
               error: 'replay_attack',
               nonce: proof.nonce,
               timestamp: proof.timestamp
-            })},
-            ${clientIP}
+            })}
           )
         `;
 
@@ -259,7 +255,7 @@ export default async function handler(req, res) {
 
     // 13. Log successful rotation to audit log
     await sql`
-      INSERT INTO audit_log (event_type, handle, success, details, ip_address)
+      INSERT INTO audit_log (event_type, handle, success, details)
       VALUES (
         'key_rotation',
         ${handle},
@@ -270,8 +266,7 @@ export default async function handler(req, res) {
           nonce: proof.nonce,
           timestamp: proof.timestamp,
           rotated_at: updated.key_rotated_at
-        })},
-        ${clientIP}
+        })}
       )
     `;
 
@@ -292,7 +287,7 @@ export default async function handler(req, res) {
     // Log error to audit log
     try {
       await sql`
-        INSERT INTO audit_log (event_type, handle, success, details, ip_address)
+        INSERT INTO audit_log (event_type, handle, success, details)
         VALUES (
           'key_rotation',
           ${handle},
@@ -300,8 +295,7 @@ export default async function handler(req, res) {
           ${JSON.stringify({
             error: 'internal_error',
             message: error.message
-          })},
-          ${clientIP}
+          })}
         )
       `;
     } catch (auditError) {
