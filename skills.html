@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>/vibe Skills - Find Experts</title>
+  <meta name="description" content="Find developers by skill expertise. TypeScript, Rust, Python, React experts.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', Monaco, monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { color: #6B8FFF; margin-bottom: 0.5rem; }
+    .subtitle { color: #888; margin-bottom: 2rem; }
+
+    .nav { margin-bottom: 2rem; }
+    .nav a { color: #6B8FFF; margin-right: 1rem; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .skill-card {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .skill-card:hover {
+      border-color: #6B8FFF;
+      transform: translateY(-2px);
+    }
+
+    .skill-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 0.5rem;
+    }
+    .skill-count {
+      color: #6B8FFF;
+      font-size: 0.875rem;
+    }
+    .skill-description {
+      color: #666;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Experts panel */
+    .experts-panel {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      display: none;
+    }
+    .experts-panel.active { display: block; }
+
+    .experts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .experts-title {
+      color: #6B8FFF;
+      font-size: 1rem;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+    .close-btn:hover { color: #e0e0e0; }
+
+    .expert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .expert-row {
+      display: grid;
+      grid-template-columns: 40px 1fr 80px 60px;
+      align-items: center;
+      padding: 0.75rem;
+      background: #0a0a1a;
+      border-radius: 6px;
+    }
+    .expert-rank {
+      font-weight: 600;
+      color: #6B8FFF;
+    }
+    .expert-handle {
+      color: #e0e0e0;
+    }
+    .expert-handle a { color: inherit; text-decoration: none; }
+    .expert-handle a:hover { color: #6B8FFF; }
+    .expert-sessions { color: #888; text-align: center; }
+    .expert-rate { color: #4ade80; text-align: right; }
+
+    .loading { color: #888; text-align: center; padding: 2rem; }
+    .error { color: #f87171; text-align: center; padding: 2rem; }
+
+    /* Search */
+    .search-box {
+      margin-bottom: 2rem;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #6B8FFF;
+    }
+    .search-input::placeholder { color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <a href="/">Home</a>
+      <a href="/community">Community</a>
+      <a href="/leaderboard">Leaderboard</a>
+      <a href="/hire">Hire</a>
+    </div>
+
+    <h1>/vibe Skills</h1>
+    <p class="subtitle">Find experts by technology expertise</p>
+
+    <div class="search-box">
+      <input type="text" class="search-input" id="skill-search" placeholder="Search skills... (typescript, rust, react, etc.)">
+    </div>
+
+    <div id="skills-grid" class="skill-grid">
+      <div class="loading">Loading skills...</div>
+    </div>
+
+    <div id="experts-panel" class="experts-panel">
+      <div class="experts-header">
+        <span class="experts-title" id="experts-title">Experts</span>
+        <button class="close-btn" onclick="closeExperts()">x</button>
+      </div>
+      <div id="experts-list" class="expert-list">
+        <div class="loading">Loading experts...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://www.slashvibe.dev/api';
+
+    const SKILLS = [
+      { name: 'TypeScript', key: 'typescript', desc: 'Static typing for JavaScript' },
+      { name: 'Rust', key: 'rust', desc: 'Systems programming language' },
+      { name: 'Python', key: 'python', desc: 'General-purpose scripting' },
+      { name: 'React', key: 'react', desc: 'UI component library' },
+      { name: 'Next.js', key: 'nextjs', desc: 'React framework' },
+      { name: 'Go', key: 'go', desc: 'Concurrent systems language' },
+      { name: 'Swift', key: 'swift', desc: 'Apple platform development' },
+      { name: 'PostgreSQL', key: 'postgres', desc: 'Relational database' },
+      { name: 'Tailwind', key: 'tailwind', desc: 'Utility-first CSS' },
+      { name: 'Docker', key: 'docker', desc: 'Container platform' },
+      { name: 'AWS', key: 'aws', desc: 'Cloud infrastructure' },
+      { name: 'Vercel', key: 'vercel', desc: 'Frontend deployment' },
+      { name: 'Supabase', key: 'supabase', desc: 'Backend as a service' },
+      { name: 'Redis', key: 'redis', desc: 'In-memory data store' },
+      { name: 'GraphQL', key: 'graphql', desc: 'API query language' },
+      { name: 'Vue', key: 'vue', desc: 'Progressive JS framework' },
+      { name: 'Svelte', key: 'svelte', desc: 'Compiler-based framework' },
+      { name: 'Kotlin', key: 'kotlin', desc: 'JVM language for Android' }
+    ];
+
+    async function loadSkillCounts() {
+      const grid = document.getElementById('skills-grid');
+
+      try {
+        // Get leaderboard to get a sense of popular skills
+        const res = await fetch(`${API}/patterns/leaderboard?metric=sessions&limit=100`);
+        const data = await res.json();
+
+        // Count skills across all users
+        const skillCounts = {};
+        if (data.leaderboard) {
+          data.leaderboard.forEach(user => {
+            (user.techStack || []).forEach(tech => {
+              const key = tech.toLowerCase();
+              skillCounts[key] = (skillCounts[key] || 0) + 1;
+            });
+          });
+        }
+
+        // Render skill cards
+        grid.innerHTML = SKILLS.map(skill => {
+          const count = skillCounts[skill.key] || 0;
+          return `
+            <div class="skill-card" onclick="showExperts('${skill.key}', '${skill.name}')">
+              <div class="skill-name">${skill.name}</div>
+              <div class="skill-count">${count} developer${count !== 1 ? 's' : ''}</div>
+              <div class="skill-description">${skill.desc}</div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        grid.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
+      }
+    }
+
+    async function showExperts(skillKey, skillName) {
+      const panel = document.getElementById('experts-panel');
+      const title = document.getElementById('experts-title');
+      const list = document.getElementById('experts-list');
+
+      title.textContent = `${skillName} Experts`;
+      panel.classList.add('active');
+      list.innerHTML = '<div class="loading">Loading experts...</div>';
+
+      try {
+        const res = await fetch(`${API}/patterns/discover?skill=${skillKey}&limit=15`);
+        const data = await res.json();
+
+        if (!data.success || !data.experts || data.experts.length === 0) {
+          list.innerHTML = '<div class="loading">No experts found for this skill</div>';
+          return;
+        }
+
+        list.innerHTML = data.experts.map((expert, index) => `
+          <div class="expert-row">
+            <span class="expert-rank">#${index + 1}</span>
+            <span class="expert-handle"><a href="/u/${expert.handle}">@${expert.handle}</a></span>
+            <span class="expert-sessions">${expert.sessions} sessions</span>
+            <span class="expert-rate">${expert.successRate}%</span>
+          </div>
+        `).join('');
+
+      } catch (e) {
+        list.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+      }
+    }
+
+    function closeExperts() {
+      document.getElementById('experts-panel').classList.remove('active');
+    }
+
+    // Search functionality
+    document.getElementById('skill-search').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('.skill-card').forEach(card => {
+        const name = card.querySelector('.skill-name').textContent.toLowerCase();
+        card.style.display = name.includes(query) ? 'block' : 'none';
+      });
+    });
+
+    // Initial load
+    loadSkillCounts();
+  </script>
+</body>
+</html>

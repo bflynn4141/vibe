@@ -3,16 +3,23 @@
  *
  * GET /api/profiles/:username - Get profile matching terminal's expected shape
  *
+ * Enhanced with pattern data from session_enrichments:
+ * - Prompting style (surgeon, spec-first, explorer, iterative)
+ * - Tech stack preferences with recency weighting
+ * - Expertise badges based on usage patterns
+ * - Success rate and efficiency metrics
+ *
  * Returns:
  * {
  *   username: string,
  *   displayName?: string,
  *   avatarUrl?: string,
  *   bio?: string,
- *   stats: { totalSessions, totalHours, projectsShipped, karma },
+ *   stats: { totalSessions, totalHours, projectsShipped, karma, successRate },
  *   skills: [{ name, proficiency, hoursUsed }],
  *   badges: [{ id, name, rarity }],
  *   recentProjects: [{ name, languages[], createdAt }],
+ *   patterns: { style, expertise, techStack, problemFocus },
  *   availableForHire: boolean,
  *   hourlyRate?: number,
  *   completedGigs: number,
@@ -21,6 +28,7 @@
  */
 
 import { kv } from '@vercel/kv';
+import { sql, isConfigured } from '../lib/db.js';
 
 // Skill categories for proficiency calculation
 const SKILL_CATEGORIES = {
@@ -40,6 +48,162 @@ const BADGE_DEFINITIONS = [
   { id: 'streak-30', name: 'Monthly Master', rarity: 'rare', check: (u, s) => s.longestStreak >= 30 },
   { id: 'gig-master', name: 'Gig Master', rarity: 'rare', check: (u, s) => s.completedGigs >= 5 }
 ];
+
+// Pattern-based badge definitions (from session_enrichments)
+const PATTERN_BADGES = [
+  { id: 'surgeon', name: 'Surgeon', rarity: 'epic', check: (p) => p?.promptingStyle?.style === 'surgeon' },
+  { id: 'architect', name: 'Architect', rarity: 'epic', check: (p) => p?.promptingStyle?.style === 'spec-first' },
+  { id: 'explorer', name: 'Explorer', rarity: 'rare', check: (p) => p?.promptingStyle?.style === 'explorer' },
+  { id: 'expert', name: 'Expert', rarity: 'legendary', check: (p) => p?.expertise?.level === 'expert' },
+  { id: 'advanced', name: 'Advanced', rarity: 'epic', check: (p) => p?.expertise?.level === 'advanced' },
+  { id: 'efficient', name: 'Cost Efficient', rarity: 'rare', check: (p) => p?.avgCostPerSession < 0.50 && p?.totalSessions >= 10 },
+  { id: 'high-success', name: 'High Success', rarity: 'rare', check: (p) => p?.successRate >= 80 && p?.totalSessions >= 10 },
+  { id: 'polyglot', name: 'Polyglot', rarity: 'epic', check: (p) => p?.topTechStack?.length >= 5 },
+  { id: 'rust-native', name: 'Rustacean', rarity: 'rare', check: (p) => p?.topTechStack?.some(t => t.name === 'rust') },
+  { id: 'ts-native', name: 'TypeScript Pro', rarity: 'common', check: (p) => p?.topTechStack?.some(t => t.name === 'typescript') }
+];
+
+/**
+ * Fetch coding patterns from session_enrichments database
+ */
+async function fetchPatternData(handle) {
+  if (!isConfigured()) return null;
+
+  try {
+    const sessions = await sql`
+      SELECT
+        tech_stack,
+        problem_type,
+        inferred_outcome,
+        tokens_in,
+        tokens_out,
+        cost_usd,
+        tool_counts,
+        session_started_at,
+        session_ended_at,
+        created_at
+      FROM session_enrichments
+      WHERE user_handle = ${handle}
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
+
+    if (sessions.length === 0) return null;
+
+    // Aggregate tech stacks (recent sessions weighted higher)
+    const techStackCounts = {};
+    const problemTypeCounts = {};
+    let successCount = 0;
+    let totalDuration = 0;
+    let totalCost = 0;
+    let sessionsWithDuration = 0;
+    const toolUsage = {};
+
+    sessions.forEach((session, index) => {
+      const recencyWeight = 1 + (sessions.length - index) / sessions.length;
+
+      // Tech stack
+      if (session.tech_stack && Array.isArray(session.tech_stack)) {
+        session.tech_stack.forEach(tech => {
+          techStackCounts[tech] = (techStackCounts[tech] || 0) + recencyWeight;
+        });
+      }
+
+      // Problem types
+      if (session.problem_type) {
+        problemTypeCounts[session.problem_type] = (problemTypeCounts[session.problem_type] || 0) + 1;
+      }
+
+      // Outcomes
+      if (session.inferred_outcome === 'success') successCount++;
+
+      // Duration
+      if (session.session_started_at && session.session_ended_at) {
+        const start = new Date(session.session_started_at);
+        const end = new Date(session.session_ended_at);
+        const duration = (end - start) / 1000;
+        if (duration > 0 && duration < 86400) {
+          totalDuration += duration;
+          sessionsWithDuration++;
+        }
+      }
+
+      // Cost
+      totalCost += session.cost_usd || 0;
+
+      // Tool usage
+      if (session.tool_counts && typeof session.tool_counts === 'object') {
+        Object.entries(session.tool_counts).forEach(([tool, count]) => {
+          toolUsage[tool] = (toolUsage[tool] || 0) + count;
+        });
+      }
+    });
+
+    const totalSessions = sessions.length;
+    const successRate = totalSessions > 0 ? Math.round((successCount / totalSessions) * 100) : 0;
+    const avgDuration = sessionsWithDuration > 0 ? totalDuration / sessionsWithDuration : 0;
+    const avgCost = totalSessions > 0 ? totalCost / totalSessions : 0;
+    const totalTools = Object.values(toolUsage).reduce((a, b) => a + b, 0);
+    const avgToolsPerSession = totalSessions > 0 ? totalTools / totalSessions : 0;
+
+    // Problem type distribution
+    const problemTypeDistribution = {};
+    Object.entries(problemTypeCounts).forEach(([type, count]) => {
+      problemTypeDistribution[type] = count / totalSessions;
+    });
+
+    // Infer prompting style
+    let promptingStyle;
+    if (avgDuration < 1800 && successRate > 80 && (problemTypeDistribution.bugfix || 0) > 0.4) {
+      promptingStyle = { style: 'surgeon', description: 'Focused, precise interventions' };
+    } else if (avgDuration > 3600 && avgToolsPerSession > 50 && successRate > 70) {
+      promptingStyle = { style: 'spec-first', description: 'Detailed specs, thorough execution' };
+    } else if ((problemTypeDistribution.explore || 0) + (problemTypeDistribution.refactor || 0) > 0.5) {
+      promptingStyle = { style: 'explorer', description: 'Discovery-driven, experimental' };
+    } else {
+      promptingStyle = { style: 'iterative', description: 'Quick cycles, rapid refinement' };
+    }
+
+    // Calculate expertise level
+    let expertiseScore = 0;
+    expertiseScore += Math.min(30, totalSessions * 2);
+    expertiseScore += (successRate / 100) * 40;
+    expertiseScore += Math.max(0, 30 - (avgCost * 10));
+
+    let expertise;
+    if (expertiseScore >= 80) expertise = { level: 'expert', score: expertiseScore };
+    else if (expertiseScore >= 60) expertise = { level: 'advanced', score: expertiseScore };
+    else if (expertiseScore >= 40) expertise = { level: 'intermediate', score: expertiseScore };
+    else if (expertiseScore >= 20) expertise = { level: 'learning', score: expertiseScore };
+    else expertise = { level: 'beginner', score: expertiseScore };
+
+    // Top tech stack
+    const topTechStack = Object.entries(techStackCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, count]) => ({ name, count: Math.round(count) }));
+
+    // Primary problem focus
+    const primaryFocus = Object.entries(problemTypeCounts)
+      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+
+    return {
+      totalSessions,
+      successRate,
+      avgCostPerSession: Math.round(avgCost * 100) / 100,
+      avgSessionDuration: Math.round(avgDuration / 60),
+      promptingStyle,
+      expertise,
+      topTechStack,
+      primaryFocus,
+      problemTypeDistribution,
+      totalCostUsd: Math.round(totalCost * 100) / 100
+    };
+  } catch (error) {
+    console.error('[profiles] Pattern fetch error:', error.message);
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -77,6 +241,9 @@ export default async function handler(req, res) {
     }
 
     const userData = typeof handleRecord === 'string' ? JSON.parse(handleRecord) : handleRecord;
+
+    // Fetch pattern data from session_enrichments (parallel with other queries)
+    const patternDataPromise = fetchPatternData(username);
 
     // Get board posts for activity data
     const postIds = await kv.lrange(`board:user:${username}`, 0, 99) || [];
@@ -141,8 +308,17 @@ export default async function handler(req, res) {
       .sort((a, b) => b.proficiency - a.proficiency)
       .slice(0, 10);
 
-    // Calculate karma
-    const karma = (shippedCount * 100) + (posts.length * 10) + (gigsCompleted * 500) + (streakData.longest * 5);
+    // Await pattern data
+    const patternData = await patternDataPromise;
+
+    // Calculate karma (enhanced with pattern data)
+    let karma = (shippedCount * 100) + (posts.length * 10) + (gigsCompleted * 500) + (streakData.longest * 5);
+    if (patternData) {
+      karma += patternData.totalSessions * 5;
+      karma += Math.round(patternData.successRate * 2);
+      if (patternData.expertise?.level === 'expert') karma += 500;
+      else if (patternData.expertise?.level === 'advanced') karma += 250;
+    }
 
     // Determine badges
     const activityStats = {
@@ -151,9 +327,20 @@ export default async function handler(req, res) {
       completedGigs: gigsCompleted
     };
 
-    const badges = BADGE_DEFINITIONS
+    // Activity-based badges
+    const activityBadges = BADGE_DEFINITIONS
       .filter(badge => badge.check(userData, activityStats))
       .map(({ id, name, rarity }) => ({ id, name, rarity }));
+
+    // Pattern-based badges
+    const patternBadges = patternData
+      ? PATTERN_BADGES
+          .filter(badge => badge.check(patternData))
+          .map(({ id, name, rarity }) => ({ id, name, rarity }))
+      : [];
+
+    // Combine and dedupe badges
+    const badges = [...activityBadges, ...patternBadges];
 
     // Recent projects (from shipped posts)
     const recentProjects = posts
@@ -172,14 +359,27 @@ export default async function handler(req, res) {
       avatarUrl: userData.avatar_url || null,
       bio: userData.bio || null,
       stats: {
-        totalSessions: posts.length,
-        totalHours: posts.length * 2, // Estimate
+        totalSessions: patternData?.totalSessions || posts.length,
+        totalHours: patternData?.avgSessionDuration
+          ? Math.round((patternData.totalSessions * patternData.avgSessionDuration) / 60)
+          : posts.length * 2,
         projectsShipped: shippedCount,
-        karma
+        karma,
+        successRate: patternData?.successRate || null,
+        totalCost: patternData?.totalCostUsd || null
       },
       skills,
       badges,
       recentProjects,
+      // Pattern-derived insights (the treasure trove)
+      patterns: patternData ? {
+        style: patternData.promptingStyle,
+        expertise: patternData.expertise,
+        techStack: patternData.topTechStack,
+        problemFocus: patternData.primaryFocus,
+        avgSessionMinutes: patternData.avgSessionDuration,
+        avgCostPerSession: patternData.avgCostPerSession
+      } : null,
       availableForHire: userData.available_for_hire !== false,
       hourlyRate: userData.hourly_rate || null,
       completedGigs: gigsCompleted,

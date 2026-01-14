@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>/vibe Community - Developer Profiles</title>
+  <meta name="description" content="Discover developers by coding patterns, tech stack, and expertise">
+  <meta property="og:title" content="/vibe Community">
+  <meta property="og:description" content="Auto-generated profile cards based on real coding patterns">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', Monaco, monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #6B8FFF; margin-bottom: 0.5rem; }
+    .subtitle { color: #888; margin-bottom: 1.5rem; }
+
+    .nav { margin-bottom: 2rem; }
+    .nav a { color: #6B8FFF; margin-right: 1rem; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      color: #888;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: #6B8FFF; color: #e0e0e0; }
+    .filter-btn.active { background: #6B8FFF; color: white; border-color: #6B8FFF; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+    }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #6B8FFF; }
+    .stat-label { font-size: 0.75rem; color: #888; }
+
+    /* Profile cards grid */
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .profile-card {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.2s;
+    }
+    .profile-card:hover {
+      border-color: #6B8FFF;
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .handle {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+    .handle a { color: inherit; text-decoration: none; }
+    .handle a:hover { color: #6B8FFF; }
+
+    .expertise-badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .expertise-expert { background: #fbbf24; color: #000; }
+    .expertise-advanced { background: #a855f7; color: white; }
+    .expertise-intermediate { background: #3b82f6; color: white; }
+    .expertise-learning { background: #22c55e; color: white; }
+    .expertise-beginner { background: #64748b; color: white; }
+
+    .style-line {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      color: #888;
+      font-size: 0.875rem;
+    }
+    .style-icon { font-size: 1rem; }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .tech-tag {
+      background: #0a0a1a;
+      border: 1px solid #333;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .card-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #333;
+    }
+    .card-stat {
+      text-align: center;
+    }
+    .card-stat-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+    .card-stat-label {
+      font-size: 0.65rem;
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    .badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-bottom: 0.75rem;
+    }
+    .badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+    }
+    .badge-legendary { background: #fbbf24; color: #000; }
+    .badge-epic { background: #a855f7; color: white; }
+    .badge-rare { background: #3b82f6; color: white; }
+    .badge-common { background: #64748b; color: white; }
+
+    .loading { color: #888; text-align: center; padding: 4rem; }
+    .error { color: #f87171; text-align: center; padding: 4rem; }
+
+    /* Discovery panel */
+    .discovery-panel {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .discovery-title { color: #6B8FFF; margin-bottom: 1rem; font-size: 0.875rem; }
+    .skill-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .skill-btn {
+      background: #0a0a1a;
+      border: 1px solid #333;
+      color: #888;
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+    .skill-btn:hover { border-color: #6B8FFF; color: #e0e0e0; }
+    .skill-btn.active { background: #6B8FFF; color: white; border-color: #6B8FFF; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <a href="/">Home</a>
+      <a href="/leaderboard">Leaderboard</a>
+      <a href="/sessions">Sessions</a>
+      <a href="/hire">Hire</a>
+    </div>
+
+    <h1>/vibe Community</h1>
+    <p class="subtitle">Auto-generated developer profiles based on real coding patterns</p>
+
+    <div class="stats-bar" id="global-stats">
+      <div class="stat-item">
+        <div class="stat-value" id="total-devs">--</div>
+        <div class="stat-label">Developers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="total-sessions">--</div>
+        <div class="stat-label">Sessions Analyzed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="avg-success">--</div>
+        <div class="stat-label">Avg Success Rate</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="total-cost">--</div>
+        <div class="stat-label">Total Cost</div>
+      </div>
+    </div>
+
+    <div class="discovery-panel">
+      <div class="discovery-title">DISCOVER BY SKILL</div>
+      <div class="skill-buttons" id="skill-filters">
+        <button class="skill-btn active" data-skill="">All</button>
+        <button class="skill-btn" data-skill="typescript">TypeScript</button>
+        <button class="skill-btn" data-skill="rust">Rust</button>
+        <button class="skill-btn" data-skill="python">Python</button>
+        <button class="skill-btn" data-skill="react">React</button>
+        <button class="skill-btn" data-skill="nextjs">Next.js</button>
+        <button class="skill-btn" data-skill="go">Go</button>
+        <button class="skill-btn" data-skill="swift">Swift</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-metric="sessions">Most Active</button>
+      <button class="filter-btn" data-metric="success_rate">Highest Success</button>
+      <button class="filter-btn" data-metric="efficiency">Most Efficient</button>
+      <button class="filter-btn" data-metric="recent">Recently Active</button>
+    </div>
+
+    <div id="profiles" class="profiles-grid">
+      <div class="loading">Loading community profiles...</div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://www.slashvibe.dev/api';
+    let currentMetric = 'sessions';
+    let currentSkill = '';
+
+    const STYLE_ICONS = {
+      'surgeon': { icon: 'O', desc: 'Precise interventions' },
+      'spec-first': { icon: '[]', desc: 'Detailed planning' },
+      'explorer': { icon: '?', desc: 'Discovery-driven' },
+      'iterative': { icon: '~', desc: 'Rapid iteration' }
+    };
+
+    async function loadProfiles() {
+      const container = document.getElementById('profiles');
+      container.innerHTML = '<div class="loading">Loading profiles...</div>';
+
+      try {
+        // Build URL with params
+        let url = `${API}/patterns/leaderboard?metric=${currentMetric}&limit=30`;
+        if (currentSkill) url += `&skill=${currentSkill}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.success) {
+          container.innerHTML = `<div class="error">${data.error || 'Failed to load'}</div>`;
+          return;
+        }
+
+        // Update global stats
+        if (data.stats) {
+          document.getElementById('total-devs').textContent = data.stats.totalUsers || '--';
+          document.getElementById('total-sessions').textContent = (data.stats.totalSessions || 0).toLocaleString();
+          document.getElementById('avg-success').textContent = data.stats.avgSuccessRate ? `${data.stats.avgSuccessRate}%` : '--';
+          document.getElementById('total-cost').textContent = data.stats.totalCost ? `$${data.stats.totalCost.toLocaleString()}` : '--';
+        }
+
+        if (!data.leaderboard || data.leaderboard.length === 0) {
+          container.innerHTML = '<div class="loading">No profiles found matching criteria</div>';
+          return;
+        }
+
+        // Fetch full profile for each user (in parallel)
+        const profilePromises = data.leaderboard.slice(0, 20).map(async (user) => {
+          try {
+            const profileRes = await fetch(`${API}/profiles/${user.handle}`);
+            const profileData = await profileRes.json();
+            return { ...user, fullProfile: profileData };
+          } catch {
+            return user;
+          }
+        });
+
+        const profiles = await Promise.all(profilePromises);
+
+        // Render cards
+        container.innerHTML = profiles.map(user => renderProfileCard(user)).join('');
+
+      } catch (e) {
+        container.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+      }
+    }
+
+    function renderProfileCard(user) {
+      const fp = user.fullProfile;
+      const patterns = fp?.patterns || {};
+
+      // Expertise badge
+      const expertiseLevel = patterns.expertise?.level || 'learning';
+      const expertiseClass = `expertise-${expertiseLevel}`;
+
+      // Style info
+      const styleKey = patterns.style?.style || 'iterative';
+      const styleInfo = STYLE_ICONS[styleKey] || STYLE_ICONS.iterative;
+      const styleDesc = patterns.style?.description || styleInfo.desc;
+
+      // Tech stack
+      const techStack = (patterns.techStack || user.techStack || []).slice(0, 5);
+      const techHtml = techStack.map(t => {
+        const name = typeof t === 'string' ? t : t.name;
+        return `<span class="tech-tag">${name}</span>`;
+      }).join('');
+
+      // Badges
+      const badges = (fp?.badges || []).slice(0, 4);
+      const badgesHtml = badges.map(b => {
+        const rarityClass = `badge-${b.rarity || 'common'}`;
+        return `<span class="badge ${rarityClass}">${b.name}</span>`;
+      }).join('');
+
+      return `
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="handle"><a href="/u/${user.handle}">@${user.handle}</a></div>
+            <span class="expertise-badge ${expertiseClass}">${expertiseLevel}</span>
+          </div>
+
+          ${badgesHtml ? `<div class="badges-row">${badgesHtml}</div>` : ''}
+
+          <div class="style-line">
+            <span class="style-icon">${styleInfo.icon}</span>
+            <span>${styleDesc}</span>
+          </div>
+
+          <div class="tech-stack">${techHtml || '<span class="tech-tag">N/A</span>'}</div>
+
+          <div class="card-stats">
+            <div class="card-stat">
+              <div class="card-stat-value">${user.sessions || 0}</div>
+              <div class="card-stat-label">Sessions</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-value">${user.successRate || 0}%</div>
+              <div class="card-stat-label">Success</div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-value">${user.totalCost ? '$' + user.totalCost.toFixed(0) : '--'}</div>
+              <div class="card-stat-label">Total Cost</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Event listeners
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMetric = btn.dataset.metric;
+        loadProfiles();
+      });
+    });
+
+    document.querySelectorAll('.skill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.skill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSkill = btn.dataset.skill;
+        loadProfiles();
+      });
+    });
+
+    // Initial load
+    loadProfiles();
+  </script>
+</body>
+</html>

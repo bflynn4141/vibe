@@ -114,6 +114,9 @@
     { "source": "/vibe-icon.png", "destination": "/public/vibe-icon.png" },
     { "source": "/og-alpha.png", "destination": "/public/og-alpha.png" },
     { "source": "/og-image.png", "destination": "/public/og-image.png" },
-    { "source": "/downloads/:path*", "destination": "/public/downloads/:path*" }
+    { "source": "/downloads/:path*", "destination": "/public/downloads/:path*" },
+    { "source": "/api/patterns/user", "destination": "/api/patterns/user.js" },
+    { "source": "/api/patterns/discover", "destination": "/api/patterns/discover.js" },
+    { "source": "/api/patterns/leaderboard", "destination": "/api/patterns/leaderboard.js" }
   ]
 }
