@@ -26,10 +26,12 @@ let sqlInstance = null;
  */
 function getSQL() {
   if (!sqlInstance) {
-    const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    const connectionString = process.env.POSTGRES_URL ||
+                             process.env.DATABASE_URL ||
+                             process.env.POSTGRES_DATABASE_URL;
 
     if (!connectionString) {
-      throw new Error('Database not configured: POSTGRES_URL or DATABASE_URL required');
+      throw new Error('Database not configured: POSTGRES_URL, DATABASE_URL, or POSTGRES_DATABASE_URL required');
     }
 
     sqlInstance = neon(connectionString);
@@ -94,7 +96,7 @@ export async function healthCheck() {
  * @returns {boolean}
  */
 export function isConfigured() {
-  return !!(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+  return !!(process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_DATABASE_URL);
 }
 
 // ============================================================
