@@ -163,25 +163,18 @@ function getBuilderMode(presence) {
 function calculateTokenActivity(clientMeta) {
   if (!clientMeta?.tokens) return null;
 
-  const { total, rate, lastUpdated } = clientMeta.tokens;
-  if (total === 0 && rate === 0) return null;
+  const { total, lastUpdated } = clientMeta.tokens;
+  if (!total || total <= 0) return null;
 
   const now = Date.now();
   const msSinceUpdate = lastUpdated ? (now - lastUpdated) : 60000;
 
-  // Base intensity: based on rate, capped at 1.0
-  // 0 rate = 0 intensity, 500+ tokens/min = 1.0 intensity
-  const baseIntensity = Math.min(1, (rate || 0) / 500);
-
-  // Staleness decay: full decay over 60 seconds
-  const decay = Math.max(0, 1 - (msSinceUpdate / 60000));
-
-  // Final intensity
-  const intensity = baseIntensity * decay;
+  // Intensity based on total tokens (logarithmic scale)
+  // 1K = 0.3, 10K = 0.5, 100K = 0.7, 1M = 0.9
+  const intensity = Math.min(1, Math.log10(Math.max(1, total)) / 6);
 
   return {
-    total: total || 0,
-    rate: rate || 0,
+    total,
     intensity: Math.round(intensity * 100) / 100,
     lastActive: msSinceUpdate
   };
