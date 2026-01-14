@@ -38,115 +38,204 @@ export default async function handler(req, res) {
     let results;
     const minSessionsInt = parseInt(minSessions);
     const limitInt = parseInt(limit);
-
-    // Build skill filter if provided (tech_stack is JSONB, not array)
-    const skillFilter = skill
-      ? sql`AND tech_stack @> ${JSON.stringify([skill.toLowerCase()])}::jsonb`
-      : sql``;
+    const normalizedSkill = skill ? skill.toLowerCase() : null;
 
     switch (metric) {
       case 'success_rate':
         // Top users by success rate (min sessions required)
-        results = await sql`
-          SELECT
-            user_handle,
-            COUNT(*) as total_sessions,
-            COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
-            ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
-            SUM(cost_usd) as total_cost,
-            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
-          FROM session_enrichments
-          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
-          WHERE 1=1 ${skillFilter}
-          GROUP BY user_handle
-          HAVING COUNT(*) >= ${minSessionsInt}
-          ORDER BY success_rate DESC, total_sessions DESC
-          LIMIT ${limitInt}
-        `;
+        if (normalizedSkill) {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
+              SUM(cost_usd) as total_cost,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            WHERE tech_stack @> ${JSON.stringify([normalizedSkill])}::jsonb
+            GROUP BY user_handle
+            HAVING COUNT(*) >= ${minSessionsInt}
+            ORDER BY success_rate DESC, total_sessions DESC
+            LIMIT ${limitInt}
+          `;
+        } else {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
+              SUM(cost_usd) as total_cost,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            GROUP BY user_handle
+            HAVING COUNT(*) >= ${minSessionsInt}
+            ORDER BY success_rate DESC, total_sessions DESC
+            LIMIT ${limitInt}
+          `;
+        }
         break;
 
       case 'efficiency':
         // Top users by cost efficiency (lowest cost per successful session)
-        results = await sql`
-          SELECT
-            user_handle,
-            COUNT(*) as total_sessions,
-            COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
-            SUM(cost_usd) as total_cost,
-            CASE
-              WHEN COUNT(*) FILTER (WHERE inferred_outcome = 'success') > 0
-              THEN ROUND((SUM(cost_usd) / COUNT(*) FILTER (WHERE inferred_outcome = 'success'))::numeric, 2)
-              ELSE NULL
-            END as cost_per_success,
-            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
-          FROM session_enrichments
-          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
-          WHERE 1=1 ${skillFilter}
-          GROUP BY user_handle
-          HAVING COUNT(*) FILTER (WHERE inferred_outcome = 'success') >= ${minSessionsInt}
-          ORDER BY cost_per_success ASC NULLS LAST, success_count DESC
-          LIMIT ${limitInt}
-        `;
+        if (normalizedSkill) {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              SUM(cost_usd) as total_cost,
+              CASE
+                WHEN COUNT(*) FILTER (WHERE inferred_outcome = 'success') > 0
+                THEN ROUND((SUM(cost_usd) / COUNT(*) FILTER (WHERE inferred_outcome = 'success'))::numeric, 2)
+                ELSE NULL
+              END as cost_per_success,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            WHERE tech_stack @> ${JSON.stringify([normalizedSkill])}::jsonb
+            GROUP BY user_handle
+            HAVING COUNT(*) FILTER (WHERE inferred_outcome = 'success') >= ${minSessionsInt}
+            ORDER BY cost_per_success ASC NULLS LAST, success_count DESC
+            LIMIT ${limitInt}
+          `;
+        } else {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              SUM(cost_usd) as total_cost,
+              CASE
+                WHEN COUNT(*) FILTER (WHERE inferred_outcome = 'success') > 0
+                THEN ROUND((SUM(cost_usd) / COUNT(*) FILTER (WHERE inferred_outcome = 'success'))::numeric, 2)
+                ELSE NULL
+              END as cost_per_success,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            GROUP BY user_handle
+            HAVING COUNT(*) FILTER (WHERE inferred_outcome = 'success') >= ${minSessionsInt}
+            ORDER BY cost_per_success ASC NULLS LAST, success_count DESC
+            LIMIT ${limitInt}
+          `;
+        }
         break;
 
       case 'volume':
         // Top users by total tokens processed
-        results = await sql`
-          SELECT
-            user_handle,
-            COUNT(*) as total_sessions,
-            SUM(tokens_in + tokens_out) as total_tokens,
-            SUM(cost_usd) as total_cost,
-            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
-          FROM session_enrichments
-          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
-          WHERE 1=1 ${skillFilter}
-          GROUP BY user_handle
-          HAVING COUNT(*) >= ${minSessionsInt}
-          ORDER BY total_tokens DESC
-          LIMIT ${limitInt}
-        `;
+        if (normalizedSkill) {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              SUM(tokens_in + tokens_out) as total_tokens,
+              SUM(cost_usd) as total_cost,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            WHERE tech_stack @> ${JSON.stringify([normalizedSkill])}::jsonb
+            GROUP BY user_handle
+            HAVING COUNT(*) >= ${minSessionsInt}
+            ORDER BY total_tokens DESC
+            LIMIT ${limitInt}
+          `;
+        } else {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              SUM(tokens_in + tokens_out) as total_tokens,
+              SUM(cost_usd) as total_cost,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            GROUP BY user_handle
+            HAVING COUNT(*) >= ${minSessionsInt}
+            ORDER BY total_tokens DESC
+            LIMIT ${limitInt}
+          `;
+        }
         break;
 
       case 'recent':
         // Most active in the last 7 days
-        results = await sql`
-          SELECT
-            user_handle,
-            COUNT(*) as total_sessions,
-            COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
-            MAX(enriched_at) as last_session,
-            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
-          FROM session_enrichments
-          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
-          WHERE enriched_at > NOW() - INTERVAL '7 days'
-          ${skillFilter}
-          GROUP BY user_handle
-          ORDER BY total_sessions DESC, last_session DESC
-          LIMIT ${limitInt}
-        `;
+        if (normalizedSkill) {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              MAX(enriched_at) as last_session,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            WHERE enriched_at > NOW() - INTERVAL '7 days'
+              AND tech_stack @> ${JSON.stringify([normalizedSkill])}::jsonb
+            GROUP BY user_handle
+            ORDER BY total_sessions DESC, last_session DESC
+            LIMIT ${limitInt}
+          `;
+        } else {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              MAX(enriched_at) as last_session,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            WHERE enriched_at > NOW() - INTERVAL '7 days'
+            GROUP BY user_handle
+            ORDER BY total_sessions DESC, last_session DESC
+            LIMIT ${limitInt}
+          `;
+        }
         break;
 
       case 'sessions':
       default:
         // Top users by total sessions
-        results = await sql`
-          SELECT
-            user_handle,
-            COUNT(*) as total_sessions,
-            COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
-            ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
-            SUM(cost_usd) as total_cost,
-            SUM(tokens_in + tokens_out) as total_tokens,
-            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
-          FROM session_enrichments
-          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
-          WHERE 1=1 ${skillFilter}
-          GROUP BY user_handle
-          HAVING COUNT(*) >= ${minSessionsInt}
-          ORDER BY total_sessions DESC
-          LIMIT ${limitInt}
-        `;
+        if (normalizedSkill) {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
+              SUM(cost_usd) as total_cost,
+              SUM(tokens_in + tokens_out) as total_tokens,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            WHERE tech_stack @> ${JSON.stringify([normalizedSkill])}::jsonb
+            GROUP BY user_handle
+            HAVING COUNT(*) >= ${minSessionsInt}
+            ORDER BY total_sessions DESC
+            LIMIT ${limitInt}
+          `;
+        } else {
+          results = await sql`
+            SELECT
+              user_handle,
+              COUNT(*) as total_sessions,
+              COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
+              ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
+              SUM(cost_usd) as total_cost,
+              SUM(tokens_in + tokens_out) as total_tokens,
+              array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
+            FROM session_enrichments
+            LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+            GROUP BY user_handle
+            HAVING COUNT(*) >= ${minSessionsInt}
+            ORDER BY total_sessions DESC
+            LIMIT ${limitInt}
+          `;
+        }
         break;
     }
 
