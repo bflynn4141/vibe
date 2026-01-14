@@ -155,6 +155,38 @@ function getBuilderMode(presence) {
   return 'exploring';
 }
 
+/**
+ * Calculate token activity with glow intensity for social display
+ * @param {object} clientMeta - Client metadata including tokens
+ * @returns {{ total: number, rate: number, intensity: number, lastActive: number } | null}
+ */
+function calculateTokenActivity(clientMeta) {
+  if (!clientMeta?.tokens) return null;
+
+  const { total, rate, lastUpdated } = clientMeta.tokens;
+  if (total === 0 && rate === 0) return null;
+
+  const now = Date.now();
+  const msSinceUpdate = lastUpdated ? (now - lastUpdated) : 60000;
+
+  // Base intensity: based on rate, capped at 1.0
+  // 0 rate = 0 intensity, 500+ tokens/min = 1.0 intensity
+  const baseIntensity = Math.min(1, (rate || 0) / 500);
+
+  // Staleness decay: full decay over 60 seconds
+  const decay = Math.max(0, 1 - (msSinceUpdate / 60000));
+
+  // Final intensity
+  const intensity = baseIntensity * decay;
+
+  return {
+    total: total || 0,
+    rate: rate || 0,
+    intensity: Math.round(intensity * 100) / 100,
+    lastActive: msSinceUpdate
+  };
+}
+
 export default async function handler(req, res) {
   // Security headers
   setSecurityHeaders(res);
@@ -293,7 +325,9 @@ export default async function handler(req, res) {
           badge: isLive ? '🔴' : (p.isAgent ? '🤖' : null),
           displayName: isLive
             ? `${p.username} 🔴 LIVE`
-            : (p.isAgent ? `${p.username} 🤖` : p.username)
+            : (p.isAgent ? `${p.username} 🤖` : p.username),
+          // Token activity for glow effects
+          tokenActivity: calculateTokenActivity(p.client)
         };
       })
       .sort((a, b) => {
