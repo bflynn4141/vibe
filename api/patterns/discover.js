@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     let users;
 
     if (skill) {
-      // Find users with expertise in a specific technology
+      // Find users with expertise in a specific technology (tech_stack is JSONB)
       users = await sql`
         WITH user_stats AS (
           SELECT
@@ -45,10 +45,10 @@ export default async function handler(req, res) {
             COUNT(*) as total_sessions,
             COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
             SUM(cost_usd) as total_cost,
-            array_agg(DISTINCT unnest_tech) as all_tech
+            array_agg(DISTINCT tech_elem) as all_tech
           FROM session_enrichments,
-               LATERAL unnest(tech_stack) as unnest_tech
-          WHERE ${skill.toLowerCase()} = ANY(SELECT lower(unnest(tech_stack)))
+               LATERAL jsonb_array_elements_text(tech_stack) as tech_elem
+          WHERE tech_stack @> ${JSON.stringify([skill.toLowerCase()])}::jsonb
           GROUP BY user_handle
           HAVING COUNT(*) >= ${parseInt(minSessions)}
         )
@@ -79,9 +79,9 @@ export default async function handler(req, res) {
             user_handle,
             COUNT(*) as total_sessions,
             COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
-            array_agg(DISTINCT unnest_tech) as all_tech
+            array_agg(DISTINCT tech_elem) as all_tech
           FROM session_enrichments,
-               LATERAL unnest(tech_stack) as unnest_tech
+               LATERAL jsonb_array_elements_text(tech_stack) as tech_elem
           WHERE problem_type = ${problemType.toLowerCase()}
           GROUP BY user_handle
           HAVING COUNT(*) >= ${parseInt(minSessions)}
@@ -105,9 +105,9 @@ export default async function handler(req, res) {
             COUNT(*) as total_sessions,
             COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
             SUM(cost_usd) as total_cost,
-            array_agg(DISTINCT unnest_tech) as all_tech
+            array_agg(DISTINCT tech_elem) as all_tech
           FROM session_enrichments,
-               LATERAL unnest(tech_stack) as unnest_tech
+               LATERAL jsonb_array_elements_text(tech_stack) as tech_elem
           GROUP BY user_handle
           HAVING COUNT(*) >= ${parseInt(minSessions)}
         )

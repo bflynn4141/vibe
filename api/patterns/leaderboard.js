@@ -39,9 +39,9 @@ export default async function handler(req, res) {
     const minSessionsInt = parseInt(minSessions);
     const limitInt = parseInt(limit);
 
-    // Build skill filter if provided
+    // Build skill filter if provided (tech_stack is JSONB, not array)
     const skillFilter = skill
-      ? sql`AND ${skill.toLowerCase()} = ANY(SELECT lower(unnest(tech_stack)))`
+      ? sql`AND tech_stack @> ${JSON.stringify([skill.toLowerCase()])}::jsonb`
       : sql``;
 
     switch (metric) {
@@ -54,9 +54,9 @@ export default async function handler(req, res) {
             COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
             ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
             SUM(cost_usd) as total_cost,
-            array_agg(DISTINCT unnest) FILTER (WHERE unnest IS NOT NULL) as tech_stack
+            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
           FROM session_enrichments
-          LEFT JOIN LATERAL unnest(tech_stack) ON true
+          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
           WHERE 1=1 ${skillFilter}
           GROUP BY user_handle
           HAVING COUNT(*) >= ${minSessionsInt}
@@ -78,9 +78,9 @@ export default async function handler(req, res) {
               THEN ROUND((SUM(cost_usd) / COUNT(*) FILTER (WHERE inferred_outcome = 'success'))::numeric, 2)
               ELSE NULL
             END as cost_per_success,
-            array_agg(DISTINCT unnest) FILTER (WHERE unnest IS NOT NULL) as tech_stack
+            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
           FROM session_enrichments
-          LEFT JOIN LATERAL unnest(tech_stack) ON true
+          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
           WHERE 1=1 ${skillFilter}
           GROUP BY user_handle
           HAVING COUNT(*) FILTER (WHERE inferred_outcome = 'success') >= ${minSessionsInt}
@@ -97,9 +97,9 @@ export default async function handler(req, res) {
             COUNT(*) as total_sessions,
             SUM(tokens_in + tokens_out) as total_tokens,
             SUM(cost_usd) as total_cost,
-            array_agg(DISTINCT unnest) FILTER (WHERE unnest IS NOT NULL) as tech_stack
+            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
           FROM session_enrichments
-          LEFT JOIN LATERAL unnest(tech_stack) ON true
+          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
           WHERE 1=1 ${skillFilter}
           GROUP BY user_handle
           HAVING COUNT(*) >= ${minSessionsInt}
@@ -115,11 +115,11 @@ export default async function handler(req, res) {
             user_handle,
             COUNT(*) as total_sessions,
             COUNT(*) FILTER (WHERE inferred_outcome = 'success') as success_count,
-            MAX(created_at) as last_session,
-            array_agg(DISTINCT unnest) FILTER (WHERE unnest IS NOT NULL) as tech_stack
+            MAX(enriched_at) as last_session,
+            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
           FROM session_enrichments
-          LEFT JOIN LATERAL unnest(tech_stack) ON true
-          WHERE created_at > NOW() - INTERVAL '7 days'
+          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
+          WHERE enriched_at > NOW() - INTERVAL '7 days'
           ${skillFilter}
           GROUP BY user_handle
           ORDER BY total_sessions DESC, last_session DESC
@@ -138,9 +138,9 @@ export default async function handler(req, res) {
             ROUND((COUNT(*) FILTER (WHERE inferred_outcome = 'success')::numeric / COUNT(*)) * 100) as success_rate,
             SUM(cost_usd) as total_cost,
             SUM(tokens_in + tokens_out) as total_tokens,
-            array_agg(DISTINCT unnest) FILTER (WHERE unnest IS NOT NULL) as tech_stack
+            array_agg(DISTINCT tech_elem) FILTER (WHERE tech_elem IS NOT NULL) as tech_stack
           FROM session_enrichments
-          LEFT JOIN LATERAL unnest(tech_stack) ON true
+          LEFT JOIN LATERAL jsonb_array_elements_text(tech_stack) as tech_elem ON true
           WHERE 1=1 ${skillFilter}
           GROUP BY user_handle
           HAVING COUNT(*) >= ${minSessionsInt}
