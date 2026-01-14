@@ -93,10 +93,13 @@ CREATE TABLE IF NOT EXISTS session_handoffs (
   expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '24 hours'),
   accepted_at TIMESTAMP,
 
-  -- Prevent duplicate pending handoffs
-  CONSTRAINT unique_pending_handoff UNIQUE (from_handle, to_handle, status)
-    DEFERRABLE INITIALLY DEFERRED
+  -- Note: Unique constraint for pending handoffs handled by partial index below
 );
+
+-- Prevent duplicate pending handoffs (but allow multiple accepted/declined over time)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_pending_handoff
+ON session_handoffs (from_handle, to_handle)
+WHERE status = 'pending';
 
 -- Indexes for handoff queries
 CREATE INDEX IF NOT EXISTS idx_handoffs_to ON session_handoffs(to_handle, status) WHERE status = 'pending';
