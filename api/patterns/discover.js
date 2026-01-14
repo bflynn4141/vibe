@@ -142,6 +142,18 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('[patterns/discover] Error:', error);
+
+    // Check if it's a missing table error - return empty data gracefully
+    if (error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      return res.status(200).json({
+        success: true,
+        query: { skill, problemType, minSessions: parseInt(minSessions) },
+        experts: [],
+        count: 0,
+        note: 'Session enrichments not yet available'
+      });
+    }
+
     return res.status(500).json({
       success: false,
       error: 'Failed to discover patterns'

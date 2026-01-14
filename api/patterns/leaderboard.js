@@ -190,6 +190,25 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('[patterns/leaderboard] Error:', error);
+
+    // Check if it's a missing table error - return empty data gracefully
+    if (error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      return res.status(200).json({
+        success: true,
+        metric,
+        skill: skill || null,
+        leaderboard: [],
+        stats: {
+          totalUsers: 0,
+          totalSessions: 0,
+          totalCost: 0,
+          avgSuccessRate: 0
+        },
+        generatedAt: new Date().toISOString(),
+        note: 'Session enrichments not yet available'
+      });
+    }
+
     return res.status(500).json({
       success: false,
       error: 'Failed to generate leaderboard'
