@@ -385,6 +385,38 @@ function getBuilderMode(presence) {
 }
 
 /**
+ * Calculate token activity with glow intensity for social display
+ * @param {object} clientMeta - Client metadata including tokens
+ * @returns {{ total: number, rate: number, intensity: number, lastActive: number } | null}
+ */
+function calculateTokenActivity(clientMeta) {
+  if (!clientMeta?.tokens) return null;
+
+  const { total, rate, lastUpdated } = clientMeta.tokens;
+  if (total === 0 && rate === 0) return null;
+
+  const now = Date.now();
+  const msSinceUpdate = lastUpdated ? (now - lastUpdated) : 60000;
+
+  // Base intensity: based on rate, capped at 1.0
+  // 0 rate = 0 intensity, 500+ tokens/min = 1.0 intensity
+  const baseIntensity = Math.min(1, (rate || 0) / 500);
+
+  // Staleness decay: full decay over 60 seconds
+  const decay = Math.max(0, 1 - (msSinceUpdate / 60000));
+
+  // Final intensity
+  const intensity = baseIntensity * decay;
+
+  return {
+    total: total || 0,
+    rate: rate || 0,
+    intensity: Math.round(intensity * 100) / 100, // Round to 2 decimals
+    lastActive: msSinceUpdate
+  };
+}
+
+/**
  * Infer mood from context
  * @param {object} context - Session context (file, error, etc.)
  * @param {object} existing - Previous presence data
@@ -424,7 +456,7 @@ export default async function handler(req, res) {
   // POST - Update presence (heartbeat), typing indicator, or session registration
   if (req.method === 'POST') {
     try {
-      const { username, workingOn, project, location, typingTo, context, sessionId, action } = req.body;
+      const { username, workingOn, project, location, typingTo, context, sessionId, action, client } = req.body;
 
       // Handle availability check - no auth required, but rate limited
       if (action === 'check') {
@@ -700,7 +732,9 @@ export default async function handler(req, res) {
         mood_reason: moodReason,
         firstSeen: existing.firstSeen || now,  // Track session start
         lastSeen: now,
-        dna: existing.dna || { top: 'platform' }
+        dna: existing.dna || { top: 'platform' },
+        // Client metadata including token telemetry
+        client: client || existing.client || null
       };
 
       // Compute builderMode from session signals
@@ -758,14 +792,16 @@ export default async function handler(req, res) {
 
     const allPresence = await getAllPresence();
 
-    // Build presence list with computed status and builderMode
+    // Build presence list with computed status, builderMode, and tokenActivity
     const list = allPresence
       .map(p => ({
         ...p,
         status: getStatus(p.lastSeen),
         builderMode: getBuilderMode(p),
         ago: timeAgo(p.lastSeen),
-        matchPercent: null
+        matchPercent: null,
+        // Calculate token activity with glow intensity
+        tokenActivity: calculateTokenActivity(p.client)
       }))
       .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
 
