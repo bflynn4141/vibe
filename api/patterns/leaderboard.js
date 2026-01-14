@@ -191,20 +191,11 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('[patterns/leaderboard] Error:', error?.message || error);
 
-    // Return empty data gracefully for all errors (table may not exist)
-    return res.status(200).json({
-      success: true,
-      metric,
-      skill: skill || null,
-      leaderboard: [],
-      stats: {
-        totalUsers: 0,
-        totalSessions: 0,
-        totalCost: 0,
-        avgSuccessRate: 0
-      },
-      generatedAt: new Date().toISOString(),
-      note: 'Pattern data not yet available'
+    // Return error details for debugging
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to generate leaderboard',
+      debug: error?.message || String(error)
     });
   }
 }
