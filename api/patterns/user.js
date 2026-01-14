@@ -304,21 +304,14 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[patterns/user] Error:', error);
+    console.error('[patterns/user] Error:', error?.message || error);
 
-    // Check if it's a missing table error - return null patterns gracefully
-    if (error.message?.includes('does not exist') || error.message?.includes('relation')) {
-      return res.status(200).json({
-        success: true,
-        handle: req.query.handle,
-        patterns: null,
-        message: 'Session enrichments not yet available'
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to generate patterns'
+    // Return null patterns gracefully for all errors (table may not exist)
+    return res.status(200).json({
+      success: true,
+      handle: req.query.handle,
+      patterns: null,
+      message: 'Pattern data not yet available'
     });
   }
 }
